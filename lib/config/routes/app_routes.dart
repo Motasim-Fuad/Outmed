@@ -1,0 +1,25 @@
+abstract final class AppRoutes {
+  static const onboarding = '/onboarding';
+  static const authLanding = '/auth-landing';
+  static const login = '/login';
+  static const profileSelection = '/profile-selection';
+  static const forgotPassword = '/forgot-password';
+  static const verifyEmail = '/verify-email';
+  static const newPassword = '/new-password';
+  static const verified = '/verified';
+  static const registration = '/registration';
+  static const buyerMain = '/buyer';
+  static const supplierMain = '/supplier';
+  static const productDetail = '/product-detail';
+  static const addOffer = '/add-offer';
+  static const orderSuccess = '/order-success';
+  static const orderDetail = '/order-detail';
+  static const allProducts = '/all-products';
+  static const categoryProducts = '/category-products';
+  static const buyerOrders = '/buyer-orders';
+  static const supplierInventory = '/supplier-inventory';
+  static const allSuppliers = '/all-suppliers';
+  static const supplierProfile = '/supplier-profile';
+  static const chat = '/chat';
+  static const updateStock = '/update-stock';
+}
