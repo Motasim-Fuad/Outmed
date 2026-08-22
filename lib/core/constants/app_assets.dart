@@ -1,6 +1,7 @@
 abstract final class AppAssets {
   static const logo = 'assets/images/image 15.png';
   static const catalogIllustration = 'assets/images/catalog_illustration.png';
+  static const heroBannerProducts = 'assets/images/hero_banner_products.png';
   static const orderIllustration = 'assets/images/order_illustration.png';
   static const deliveryIllustration = 'assets/images/delivery_illustration.png';
   static const diagnosticKit = 'assets/images/diagnostic_kit.png';

@@ -228,7 +228,7 @@ const Map<String, String> enUs = {
   'more': 'More',
   'search_placeholder': 'Search for products, supplies...',
   'trusted_partner': 'Your trusted partner for',
-  'banner_heading': 'Medical supplies',
+  'banner_heading': 'Medical Supplies',
   'banner_subtext': 'Quality products, verified suppliers. On-time delivery.',
   'remember_me': 'Remember me',
   'healthcare_facility_hint': 'Hospitals, clinics, laboratories and pharmacies',

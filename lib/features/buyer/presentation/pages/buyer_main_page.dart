@@ -155,9 +155,9 @@ class _BuyerHome extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(22),
                   gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF1B8A7C), Color(0xFF4DB6A8)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0x1AFFFFFF),Color(0xFF0F766E)],
                   ),
                   boxShadow: AppColors.glossyShadow,
                 ),
@@ -171,8 +171,9 @@ class _BuyerHome extends StatelessWidget {
                           Text(
                             'trusted_partner'.tr,
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
+                              color: Colors.black,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold
                             ),
                           ),
                           Text(
@@ -180,7 +181,7 @@ class _BuyerHome extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color:AppColors.primary,
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
                             ),
@@ -190,7 +191,7 @@ class _BuyerHome extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: Color(0xFFE8F6F2),
+                              color: Color(0xB30C0A09),
                               fontSize: 11,
                             ),
                           ),
@@ -205,9 +206,11 @@ class _BuyerHome extends StatelessWidget {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(20),
                                 gradient: const LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
                                   colors: [
-                                    Color(0xFF26A69A),
-                                    AppColors.primaryDark,
+                                    Color(0xFF0F766E),
+                                    Color(0xFF10B981),
                                   ],
                                 ),
                               ),

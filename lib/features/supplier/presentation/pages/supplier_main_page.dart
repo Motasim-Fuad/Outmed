@@ -238,7 +238,6 @@ class _DashboardSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
         gradient: const LinearGradient(
@@ -251,7 +250,7 @@ class _DashboardSummaryCard extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            top: -28,
+            top: -20,
             right: -12,
             child: Container(
               width: 110,
@@ -274,64 +273,67 @@ class _DashboardSummaryCard extends StatelessWidget {
               ),
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'business_today'.tr,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  height: 1.3,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .18),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  _formatDate(DateTime.now()),
+          Padding(
+            padding: const EdgeInsets.all(18.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'business_today'.tr,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 11,
+                    fontSize: 15,
+                    height: 1.3,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _Metric(
-                      icon: Icons.shopping_bag_outlined,
-                      label: 'todays_orders'.tr,
-                      value: '$orderCount',
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _formatDate(DateTime.now()),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  Expanded(
-                    child: _Metric(
-                      icon: Icons.payments_outlined,
-                      label: 'todays_revenue'.tr,
-                      value: '${'sar'.tr} ${revenue.toStringAsFixed(0)}',
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _Metric(
+                        icon: Icons.shopping_bag_outlined,
+                        label: 'todays_orders'.tr,
+                        value: '$orderCount',
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: _Metric(
-                      icon: Icons.schedule_rounded,
-                      label: 'pending_orders'.tr,
-                      value: '$pendingCount',
+                    Expanded(
+                      child: _Metric(
+                        icon: Icons.payments_outlined,
+                        label: 'todays_revenue'.tr,
+                        value: '${'sar'.tr} ${revenue.toStringAsFixed(0)}',
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    Expanded(
+                      child: _Metric(
+                        icon: Icons.schedule_rounded,
+                        label: 'pending_orders'.tr,
+                        value: '$pendingCount',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
