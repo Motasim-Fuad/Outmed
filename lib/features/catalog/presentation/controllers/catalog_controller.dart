@@ -46,6 +46,13 @@ class CatalogController extends GetxController {
 
   ProductModel? productById(String id) => _repository.findProduct(id);
 
+  SupplierOfferModel? offerById(String id) {
+    for (final offer in _repository.getOffers()) {
+      if (offer.id == id) return offer;
+    }
+    return null;
+  }
+
   List<ProductModel> searchMasterCatalog(String query) {
     return _repository.searchProducts(query);
   }

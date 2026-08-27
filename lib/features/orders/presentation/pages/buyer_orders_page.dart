@@ -13,9 +13,34 @@ class BuyerOrdersPage extends StatelessWidget {
     final controller = Get.find<OrderController>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: Text('my_orders'.tr)),
-      body: Obx(
-        () => ListView.builder(
+      appBar: AppBar(title: Text('order_history'.tr)),
+      body: Obx(() {
+        if (controller.orders.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'no_orders'.tr,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'empty_orders_hint'.tr,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppColors.muted),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return ListView.builder(
           padding: const EdgeInsets.all(18),
           itemCount: controller.orders.length,
           itemBuilder: (context, index) {
@@ -77,7 +102,7 @@ class BuyerOrdersPage extends StatelessWidget {
                           ),
                         ),
                         const Spacer(),
-                        const Icon(Icons.chevron_right_rounded),
+                        _BuyAgainButton(order: order),
                       ],
                     ),
                   ],
@@ -85,7 +110,38 @@ class BuyerOrdersPage extends StatelessWidget {
               ),
             );
           },
-        ),
+        );
+      }),
+    );
+  }
+}
+
+class _BuyAgainButton extends StatelessWidget {
+  const _BuyAgainButton({required this.order});
+
+  final OrderModel order;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: () {
+        final added = Get.find<OrderController>().buyAgain(order);
+        if (!added) {
+          Get.snackbar('app_name'.tr, 'offer_unavailable'.tr);
+          return;
+        }
+        Get.snackbar('app_name'.tr, 'added_to_cart'.tr);
+      },
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.primary,
+        side: const BorderSide(color: AppColors.primary),
+        visualDensity: VisualDensity.compact,
+        minimumSize: Size.zero,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      ),
+      child: Text(
+        'buy_again'.tr,
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
       ),
     );
   }

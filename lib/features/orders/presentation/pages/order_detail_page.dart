@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
 import 'package:outmed/features/orders/data/models/order_model.dart';
 import 'package:outmed/features/orders/presentation/controllers/order_controller.dart';
@@ -111,11 +112,25 @@ class OrderDetailPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 26),
-              if (success)
+              if (Get.previousRoute != AppRoutes.supplierMain)
+                CustomButton(
+                  label: 'buy_again'.tr,
+                  onPressed: () {
+                    final added = controller.buyAgain(order);
+                    if (!added) {
+                      Get.snackbar('app_name'.tr, 'offer_unavailable'.tr);
+                      return;
+                    }
+                    Get.snackbar('app_name'.tr, 'added_to_cart'.tr);
+                  },
+                ),
+              if (success) ...[
+                const SizedBox(height: 12),
                 CustomButton(
                   label: 'continue_shopping'.tr,
                   onPressed: () => Get.back(),
                 ),
+              ],
             ],
           );
         }),

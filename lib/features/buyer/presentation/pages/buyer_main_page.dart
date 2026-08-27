@@ -164,10 +164,13 @@ class _BuyerHome extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
+                      child: FittedBox(
+                        alignment: AlignmentDirectional.centerStart,
+                        fit: BoxFit.scaleDown,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                           Text(
                             'trusted_partner'.tr,
                             style: const TextStyle(
@@ -225,6 +228,7 @@ class _BuyerHome extends StatelessWidget {
                             ),
                           ),
                         ],
+                      ),
                       ),
                     ),
                     const SizedBox(

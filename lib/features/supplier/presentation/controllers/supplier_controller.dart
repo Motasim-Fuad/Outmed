@@ -92,7 +92,17 @@ class SupplierController extends GetxController {
     );
     final saved = _repository.saveOffer(offer);
     refreshOffers();
+    Get.find<CatalogController>().refreshCatalog();
     return saved;
+  }
+
+  bool deleteOffer(String id) {
+    final removed = _repository.deleteOffer(id);
+    if (removed) {
+      refreshOffers();
+      Get.find<CatalogController>().refreshCatalog();
+    }
+    return removed;
   }
 
   void refreshOffers() {

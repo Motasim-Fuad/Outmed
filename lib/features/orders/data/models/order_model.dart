@@ -17,6 +17,8 @@ class OrderModel {
     required this.total,
     required this.createdAt,
     required this.status,
+    this.productId = '',
+    this.offerId = '',
   });
 
   final String id;
@@ -27,6 +29,8 @@ class OrderModel {
   final double total;
   final DateTime createdAt;
   final OrderStatus status;
+  final String productId;
+  final String offerId;
 
   OrderModel copyWith({OrderStatus? status}) => OrderModel(
     id: id,
@@ -37,5 +41,7 @@ class OrderModel {
     total: total,
     createdAt: createdAt,
     status: status ?? this.status,
+    productId: productId,
+    offerId: offerId,
   );
 }

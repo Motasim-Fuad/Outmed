@@ -173,4 +173,12 @@ class CatalogRepositoryImpl implements CatalogRepository {
     }
     return offer;
   }
+
+  @override
+  bool deleteOffer(String id) {
+    final index = _offers.indexWhere((item) => item.id == id);
+    if (index < 0) return false;
+    _offers.removeAt(index);
+    return true;
+  }
 }

@@ -8,4 +8,5 @@ abstract interface class CatalogRepository {
   bool productExists({required String name, required String reference});
   ProductModel createMasterProduct(ProductModel product);
   SupplierOfferModel saveOffer(SupplierOfferModel offer);
+  bool deleteOffer(String id);
 }

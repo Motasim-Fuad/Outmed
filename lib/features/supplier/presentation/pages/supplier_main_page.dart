@@ -597,26 +597,7 @@ class _LowStockTile extends StatelessWidget {
                 ],
               ),
             ),
-            Flexible(
-              child: OutlinedButton(
-                onPressed: () =>
-                    Get.toNamed(AppRoutes.updateStock, arguments: offer),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(
-                  'update_stock'.tr,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 10),
-                ),
-              ),
-            ),
+            _OfferActions(offer: offer),
           ],
         ),
       ),
@@ -937,24 +918,7 @@ class _InventoryRow extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  OutlinedButton(
-                    onPressed: () =>
-                        Get.toNamed(AppRoutes.updateStock, arguments: offer),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
-                      visualDensity: VisualDensity.compact,
-                      minimumSize: Size.zero,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(
-                      'update_stock'.tr,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 10),
-                    ),
-                  ),
+                  _OfferActions(offer: offer),
                 ],
               ),
             ),
@@ -1119,6 +1083,77 @@ class _StatusBadge extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _OfferActions extends StatelessWidget {
+  const _OfferActions({required this.offer});
+
+  final SupplierOfferModel offer;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      tooltip: 'edit_offer'.tr,
+      padding: EdgeInsets.zero,
+      onSelected: (value) {
+        switch (value) {
+          case 'stock':
+            Get.toNamed(AppRoutes.updateStock, arguments: offer);
+          case 'edit':
+            Get.toNamed(AppRoutes.addOffer, arguments: offer);
+          case 'delete':
+            _confirmDeleteOffer(offer);
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(value: 'stock', child: Text('update_stock'.tr)),
+        PopupMenuItem(value: 'edit', child: Text('edit_offer'.tr)),
+        PopupMenuItem(
+          value: 'delete',
+          child: Text(
+            'delete_offer'.tr,
+            style: const TextStyle(color: AppColors.danger),
+          ),
+        ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.primary),
+        ),
+        child: const Icon(
+          Icons.more_horiz_rounded,
+          size: 16,
+          color: AppColors.primary,
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _confirmDeleteOffer(SupplierOfferModel offer) async {
+  final confirmed = await Get.dialog<bool>(
+    AlertDialog(
+      title: Text('delete_offer'.tr),
+      content: Text('confirm_delete_offer'.tr),
+      actions: [
+        TextButton(
+          onPressed: () => Get.back(result: false),
+          child: Text('cancel'.tr),
+        ),
+        TextButton(
+          onPressed: () => Get.back(result: true),
+          style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+          child: Text('delete'.tr),
+        ),
+      ],
+    ),
+  );
+  if (confirmed == true) {
+    Get.find<SupplierController>().deleteOffer(offer.id);
+    Get.snackbar('app_name'.tr, 'offer_deleted'.tr);
   }
 }
 
