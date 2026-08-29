@@ -10,4 +10,6 @@ abstract final class AppAssets {
   static const marshMedicalLogo = 'assets/images/marsh_medical_logo.png';
   static const healthFacility = 'assets/images/health_facility.png';
   static const supplierWarehouse = 'assets/images/supplier_warehouse.png';
+  static const authScreen = 'assets/images/authScreen.png';
+
 }

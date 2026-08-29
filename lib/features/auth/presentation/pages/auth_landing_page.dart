@@ -29,7 +29,7 @@ class AuthLandingPage extends StatelessWidget {
                   color: AppColors.mint,
                   borderRadius: BorderRadius.circular(28),
                 ),
-                child: const AppAssetImage(AppAssets.healthFacility),
+                child: const AppAssetImage(AppAssets.authScreen),
               ),
               const SizedBox(height: 24),
               Text(
