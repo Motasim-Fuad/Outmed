@@ -78,7 +78,7 @@ class _LoginPageState extends State<LoginPage> {
                       Expanded(
                         child: _RoleButton(
                           label: 'buyer'.tr,
-                          icon: Icons.local_hospital_outlined,
+                          icon: Icons.business,
                           selected: auth.selectedRole.value == UserRole.buyer,
                           onTap: () => auth.selectRole(UserRole.buyer),
                         ),
@@ -86,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
                       Expanded(
                         child: _RoleButton(
                           label: 'supplier'.tr,
-                          icon: Icons.storefront_outlined,
+                          icon: Icons.business_center_outlined,
                           selected:
                               auth.selectedRole.value == UserRole.supplier,
                           onTap: () => auth.selectRole(UserRole.supplier),

@@ -25,10 +25,6 @@ class AuthLandingPage extends StatelessWidget {
                 height: 230,
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.mint,
-                  borderRadius: BorderRadius.circular(28),
-                ),
                 child: const AppAssetImage(AppAssets.authScreen),
               ),
               const SizedBox(height: 24),

@@ -76,10 +76,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           constraints: const BoxConstraints(maxHeight: 330),
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.primarySoft,
-                            borderRadius: BorderRadius.circular(28),
-                          ),
                           child: AppAssetImage(page.image),
                         ),
                         const Spacer(),
