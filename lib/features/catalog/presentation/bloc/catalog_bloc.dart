@@ -1,0 +1,48 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:outmed/core/config/app_env.dart';
+import 'package:outmed/core/constants/app_durations.dart';
+import 'package:outmed/core/logger/app_logger.dart';
+import 'package:outmed/core/status/load_status.dart';
+import 'package:outmed/features/catalog/data/models/product_model.dart';
+import 'package:outmed/features/catalog/domain/repositories/catalog_repository.dart';
+import 'package:outmed/features/catalog/presentation/bloc/catalog_event.dart';
+import 'package:outmed/features/catalog/presentation/bloc/catalog_state.dart';
+
+class CatalogBloc extends Bloc<CatalogEvent, CatalogState> {
+  CatalogBloc(this._repository) : super(const CatalogState()) {
+    on<CatalogStarted>(_load);
+    on<CatalogRefreshRequested>(_load);
+    on<CatalogSearchChanged>(_search);
+    add(const CatalogStarted());
+  }
+
+  final CatalogRepository _repository;
+
+  List<ProductModel> get products => state.products;
+  List<ProductModel> get visibleProducts => state.visibleProducts;
+  List<SupplierOfferModel> offersFor(String productId) => state.offersFor(productId);
+  SupplierOfferModel? bestOfferFor(String productId) => state.bestOfferFor(productId);
+
+  Future<void> _load(CatalogEvent event, Emitter<CatalogState> emit) async {
+    AppLogger.log('CatalogBloc: CatalogStarted');
+    emit(state.copyWith(status: LoadStatus.loading, revision: state.revision + 1));
+    if (!AppEnv.isTest) {
+      await Future<void>.delayed(AppDurations.shimmer);
+    }
+    await _repository.refreshRemote();
+    emit(
+      state.copyWith(
+        status: LoadStatus.success,
+        products: _repository.getProducts(),
+        offers: _repository.getOffers(),
+        revision: state.revision + 1,
+      ),
+    );
+  }
+
+  void _search(CatalogSearchChanged event, Emitter<CatalogState> emit) {
+    emit(
+      state.copyWith(searchQuery: event.query, revision: state.revision + 1),
+    );
+  }
+}

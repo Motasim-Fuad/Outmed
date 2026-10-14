@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/features/orders/data/models/order_model.dart';
-import 'package:outmed/features/orders/presentation/controllers/order_controller.dart';
+import 'package:outmed/features/orders/presentation/bloc/order_bloc.dart';
+import 'package:outmed/features/orders/presentation/bloc/order_event.dart';
+import 'package:outmed/shared/widgets/inline_error_text.dart';
 
 class BuyerOrdersPage extends StatelessWidget {
   const BuyerOrdersPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<OrderController>();
+    final controller = context.watch<OrderBloc>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(title: Text('order_history'.tr)),
-      body: Obx(() {
+      body: Builder(builder: (context) {
         if (controller.orders.isEmpty) {
           return Center(
             child: Padding(
@@ -40,13 +44,17 @@ class BuyerOrdersPage extends StatelessWidget {
             ),
           );
         }
-        return ListView.builder(
+        return Column(
+          children: [
+            InlineErrorText(message: controller.state.errorMessage),
+            Expanded(
+              child: ListView.builder(
           padding: const EdgeInsets.all(18),
           itemCount: controller.orders.length,
           itemBuilder: (context, index) {
             final order = controller.orders[index];
             return InkWell(
-              onTap: () => Get.toNamed(AppRoutes.orderDetail, arguments: order),
+              onTap: () => AppNav.push(AppRoutes.orderDetail, extra: order),
               borderRadius: BorderRadius.circular(15),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -110,6 +118,9 @@ class BuyerOrdersPage extends StatelessWidget {
               ),
             );
           },
+        ),
+            ),
+          ],
         );
       }),
     );
@@ -125,12 +136,7 @@ class _BuyAgainButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return OutlinedButton(
       onPressed: () {
-        final added = Get.find<OrderController>().buyAgain(order);
-        if (!added) {
-          Get.snackbar('app_name'.tr, 'offer_unavailable'.tr);
-          return;
-        }
-        Get.snackbar('app_name'.tr, 'added_to_cart'.tr);
+        context.read<OrderBloc>().add(OrderBuyAgainRequested(order));
       },
       style: OutlinedButton.styleFrom(
         foregroundColor: AppColors.primary,

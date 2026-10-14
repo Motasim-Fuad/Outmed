@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 
 class VerifiedPage extends StatelessWidget {
@@ -43,7 +44,7 @@ class VerifiedPage extends StatelessWidget {
               const Spacer(),
               CustomButton(
                 label: 'login_account'.tr,
-                onPressed: () => Get.offAllNamed(AppRoutes.login),
+                onPressed: () => AppNav.go(AppRoutes.login),
               ),
             ],
           ),

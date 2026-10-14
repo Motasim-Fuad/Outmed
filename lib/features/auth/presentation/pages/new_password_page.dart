@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/shared/widgets/app_text_field.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 
@@ -81,7 +82,7 @@ class _NewPasswordPageState extends State<NewPasswordPage> {
                 onPressed: agreed
                     ? () {
                         if (formKey.currentState?.validate() ?? false) {
-                          Get.offAllNamed(AppRoutes.verified);
+                          AppNav.go(AppRoutes.verified);
                         }
                       }
                     : null,

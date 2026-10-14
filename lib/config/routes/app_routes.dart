@@ -22,4 +22,7 @@ abstract final class AppRoutes {
   static const supplierProfile = '/supplier-profile';
   static const chat = '/chat';
   static const updateStock = '/update-stock';
+  static const messages = '/messages';
+  static const maintenance = '/maintenance';
+  static const forceUpdate = '/force-update';
 }

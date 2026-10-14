@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/features/catalog/data/models/marketplace_supplier.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 import 'package:outmed/shared/widgets/glossy_card.dart';
@@ -22,7 +23,7 @@ class AllSuppliersPage extends StatelessWidget {
           final supplier = MarketplaceSupplier.all[index];
           return GlossyCard(
             onTap: () =>
-                Get.toNamed(AppRoutes.supplierProfile, arguments: supplier),
+                AppNav.push(AppRoutes.supplierProfile, extra: supplier),
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [

@@ -1,9 +1,16 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
+import 'package:outmed/core/config/app_env.dart';
 import 'package:outmed/core/constants/app_assets.dart';
+import 'package:outmed/core/logger/app_logger.dart';
+import 'package:outmed/core/network/api_endpoints.dart';
+import 'package:outmed/core/storage/app_database.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
 import 'package:outmed/features/catalog/domain/repositories/catalog_repository.dart';
 
 class CatalogRepositoryImpl implements CatalogRepository {
-  CatalogRepositoryImpl()
+  CatalogRepositoryImpl(this._dio)
     : _products = [
         const ProductModel(
           id: 'diagnostic-kit',
@@ -13,7 +20,6 @@ class CatalogRepositoryImpl implements CatalogRepository {
           reference: 'OM-DK-100',
           packSize: '1 complete kit',
           imageAsset: AppAssets.diagnosticKit,
-          addedOn: '10 Aug 2026',
         ),
         const ProductModel(
           id: 'syringe-5ml',
@@ -117,8 +123,10 @@ class CatalogRepositoryImpl implements CatalogRepository {
         ),
       ];
 
+  final Dio _dio;
   final List<ProductModel> _products;
   final List<SupplierOfferModel> _offers;
+  AppDatabase? _local;
 
   @override
   List<ProductModel> getProducts() => List.unmodifiable(_products);
@@ -157,9 +165,10 @@ class CatalogRepositoryImpl implements CatalogRepository {
   @override
   ProductModel createMasterProduct(ProductModel product) {
     if (productExists(name: product.name, reference: product.reference)) {
-      throw StateError('duplicate_product');
+      throw const DuplicateProductException();
     }
     _products.add(product);
+    _persist();
     return product;
   }
 
@@ -171,6 +180,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
     } else {
       _offers.add(offer);
     }
+    _persist();
     return offer;
   }
 
@@ -179,6 +189,41 @@ class CatalogRepositoryImpl implements CatalogRepository {
     final index = _offers.indexWhere((item) => item.id == id);
     if (index < 0) return false;
     _offers.removeAt(index);
+    _persist();
     return true;
+  }
+
+  Future<void> bindLocal(AppDatabase database) async {
+    _local = database;
+    final products = await database.readBucket('products');
+    final offers = await database.readBucket('offers');
+    if (products.isNotEmpty) {
+      _products
+        ..clear()
+        ..addAll(products.map(ProductModel.fromJson));
+    }
+    if (offers.isNotEmpty) {
+      _offers
+        ..clear()
+        ..addAll(offers.map(SupplierOfferModel.fromJson));
+    }
+  }
+
+  void _persist() {
+    final database = _local;
+    if (database == null) return;
+    unawaited(database.writeBucket('products', {for (final item in _products) item.id: item.toJson()}));
+    unawaited(database.writeBucket('offers', {for (final item in _offers) item.id: item.toJson()}));
+  }
+
+  @override
+  Future<void> refreshRemote() async {
+    if (AppEnv.isMock || AppEnv.isTest) return;
+    try {
+      final response = await _dio.get<dynamic>(ApiEndpoints.products);
+      AppLogger.log('CatalogRepository: remote status ${response.statusCode}');
+    } on DioException catch (error) {
+      AppLogger.log('CatalogRepository: remote skipped ${error.type.name}');
+    }
   }
 }

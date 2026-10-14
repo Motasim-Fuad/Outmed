@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/core/router/route_args.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
-import 'package:outmed/features/catalog/presentation/controllers/catalog_controller.dart';
+import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
 import 'package:outmed/shared/widgets/product_card.dart';
 
 class AllProductsPage extends StatefulWidget {
@@ -14,14 +17,17 @@ class AllProductsPage extends StatefulWidget {
 }
 
 class _AllProductsPageState extends State<AllProductsPage> {
-  final catalog = Get.find<CatalogController>();
   final searchController = TextEditingController();
-  late String category;
+  String category = 'All';
+  var _hydrated = false;
 
   @override
-  void initState() {
-    super.initState();
-    category = Get.arguments is String ? Get.arguments as String : 'All';
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hydrated) return;
+    _hydrated = true;
+    final extra = RouteArgs.maybe<Object>(context);
+    if (extra is String) category = extra;
   }
 
   @override
@@ -30,7 +36,7 @@ class _AllProductsPageState extends State<AllProductsPage> {
     super.dispose();
   }
 
-  List<ProductModel> get products {
+  List<ProductModel> _products(CatalogBloc catalog) {
     final query = searchController.text.trim().toLowerCase();
     return catalog.products
         .where((product) {
@@ -45,13 +51,14 @@ class _AllProductsPageState extends State<AllProductsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final catalog = context.watch<CatalogBloc>();
+    final products = _products(catalog);
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(category == 'All' ? 'all_products'.tr : category),
       ),
-      body: Obx(
-        () => CustomScrollView(
+      body: Builder(builder: (context) => CustomScrollView(
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
@@ -143,9 +150,9 @@ class _AllProductsPageState extends State<AllProductsPage> {
                     return ProductCard(
                       product: product,
                       offer: catalog.bestOfferFor(product.id),
-                      onTap: () => Get.toNamed(
+                      onTap: () => AppNav.push(
                         AppRoutes.productDetail,
-                        arguments: product,
+                        extra: product,
                       ),
                     );
                   }, childCount: products.length),

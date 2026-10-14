@@ -296,4 +296,12 @@ const Map<String, String> enUs = {
   'shipped': 'Shipped',
   'all_products_filter': 'All products',
   'product_count_label': '@count Products',
+  'request_failed': 'Request failed',
+  'offline_banner': 'You are offline. Changes will sync when you reconnect.',
+  'maintenance_title': 'OutMed is under maintenance',
+  'maintenance_body': 'Please try again shortly.',
+  'force_update_title': 'Update required',
+  'force_update_body': 'Install the latest version to continue.',
+  'payment_failed': 'Payment could not be started.',
+  'unexpected_error': 'Something went wrong',
 };

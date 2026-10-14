@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/core/router/route_args.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
-import 'package:outmed/features/supplier/presentation/controllers/supplier_controller.dart';
+import 'package:outmed/features/supplier/presentation/bloc/supplier_bloc.dart';
+import 'package:outmed/features/supplier/presentation/bloc/supplier_event.dart';
+import 'package:outmed/features/supplier/presentation/bloc/supplier_state.dart';
 import 'package:outmed/shared/widgets/app_text_field.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 import 'package:outmed/shared/widgets/glossy_card.dart';
@@ -17,11 +22,14 @@ class UpdateStockPage extends StatefulWidget {
 class _UpdateStockPageState extends State<UpdateStockPage> {
   late final SupplierOfferModel offer;
   late final TextEditingController stockController;
+  var _hydrated = false;
 
   @override
-  void initState() {
-    super.initState();
-    offer = Get.arguments as SupplierOfferModel;
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hydrated) return;
+    _hydrated = true;
+    offer = RouteArgs.maybe<Object>(context)! as SupplierOfferModel;
     stockController = TextEditingController(text: '${offer.stock}');
   }
 
@@ -33,9 +41,12 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
 
   @override
   Widget build(BuildContext context) {
-    final supplier = Get.find<SupplierController>();
+    final supplier = context.watch<SupplierBloc>();
     final product = supplier.productForOffer(offer);
-    return Scaffold(
+    return BlocListener<SupplierBloc, SupplierState>(
+      listenWhen: (previous, current) => !previous.closePage && current.closePage,
+      listener: (context, state) => AppNav.pop(),
+      child: Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(title: Text('update_stock'.tr)),
       body: ListView(
@@ -71,21 +82,23 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
           CustomButton(
             label: 'update_stock'.tr,
             onPressed: () {
-              supplier.saveOffer(
-                product: product!,
-                price: offer.price,
-                stock: int.parse(stockController.text),
-                description: offer.description,
-                minimumOrder: offer.minimumOrder,
-                preparationDays: offer.preparationDays,
-                existing: offer,
+              supplier.add(
+                SupplierOfferSaveRequested(
+                  product: product!,
+                  price: offer.price,
+                  stock: int.parse(stockController.text),
+                  description: offer.description,
+                  minimumOrder: offer.minimumOrder,
+                  preparationDays: offer.preparationDays,
+                  existing: offer,
+                ),
               );
-              Get.back<void>();
-              Get.snackbar('app_name'.tr, 'stock_updated'.tr);
+
             },
           ),
         ],
       ),
+    ),
     );
   }
 }

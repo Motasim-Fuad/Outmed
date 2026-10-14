@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/core/router/route_args.dart';
 import 'package:outmed/features/catalog/data/models/marketplace_supplier.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
@@ -12,7 +14,7 @@ class SupplierProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final supplier = Get.arguments as MarketplaceSupplier;
+    final supplier = RouteArgs.maybe<Object>(context)! as MarketplaceSupplier;
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(title: Text('supplier_profile'.tr)),
@@ -100,7 +102,7 @@ class SupplierProfilePage extends StatelessWidget {
             icon: Icons.chat_bubble_outline_rounded,
             label: 'message_supplier'.tr,
             onPressed: () =>
-                Get.toNamed(AppRoutes.chat, arguments: supplier.name),
+                AppNav.push(AppRoutes.chat, extra: supplier.name),
           ),
         ],
       ),

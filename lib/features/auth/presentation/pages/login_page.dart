@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
-import 'package:outmed/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/features/auth/domain/user_role.dart';
+import 'package:outmed/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:outmed/features/auth/presentation/bloc/auth_event.dart';
 import 'package:outmed/shared/widgets/app_text_field.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
+import 'package:outmed/shared/widgets/inline_error_text.dart';
 import 'package:outmed/shared/widgets/outmed_logo.dart';
 
 class LoginPage extends StatefulWidget {
@@ -28,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Get.find<AuthController>();
+    final auth = context.watch<AuthBloc>();
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -65,8 +70,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 9),
-              Obx(
-                () => Container(
+              Builder(builder: (context) => Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: AppColors.canvas,
@@ -79,8 +83,8 @@ class _LoginPageState extends State<LoginPage> {
                         child: _RoleButton(
                           label: 'buyer'.tr,
                           icon: Icons.business,
-                          selected: auth.selectedRole.value == UserRole.buyer,
-                          onTap: () => auth.selectRole(UserRole.buyer),
+                          selected: auth.state.role == UserRole.buyer,
+                          onTap: () => auth.add(const AuthRoleSelected(UserRole.buyer)),
                         ),
                       ),
                       Expanded(
@@ -88,8 +92,8 @@ class _LoginPageState extends State<LoginPage> {
                           label: 'supplier'.tr,
                           icon: Icons.business_center_outlined,
                           selected:
-                              auth.selectedRole.value == UserRole.supplier,
-                          onTap: () => auth.selectRole(UserRole.supplier),
+                              auth.state.role == UserRole.supplier,
+                          onTap: () => auth.add(const AuthRoleSelected(UserRole.supplier)),
                         ),
                       ),
                     ],
@@ -106,20 +110,19 @@ class _LoginPageState extends State<LoginPage> {
                   if (value == null || value.trim().isEmpty) {
                     return 'required_field'.tr;
                   }
-                  return GetUtils.isEmail(value) ? null : 'invalid_email'.tr;
+                  return _isEmail(value) ? null : 'invalid_email'.tr;
                 },
               ),
               const SizedBox(height: 14),
-              Obx(
-                () => AppTextField(
+              Builder(builder: (context) => AppTextField(
                   controller: passwordController,
                   label: 'password'.tr,
-                  obscureText: auth.obscurePassword.value,
+                  obscureText: auth.state.obscurePassword,
                   prefixIcon: Icons.lock_outline_rounded,
                   suffixIcon: IconButton(
-                    onPressed: auth.togglePasswordVisibility,
+                    onPressed: () => auth.add(const AuthPasswordVisibilityToggled()),
                     icon: Icon(
-                      auth.obscurePassword.value
+                      auth.state.obscurePassword
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
                     ),
@@ -132,7 +135,7 @@ class _LoginPageState extends State<LoginPage> {
               Align(
                 alignment: AlignmentDirectional.centerEnd,
                 child: TextButton(
-                  onPressed: () => Get.toNamed(AppRoutes.forgotPassword),
+                  onPressed: () => AppNav.push(AppRoutes.forgotPassword),
                   child: Text('forgot_password'.tr),
                 ),
               ),
@@ -140,12 +143,20 @@ class _LoginPageState extends State<LoginPage> {
               CustomButton(
                 label: 'sign_in'.tr,
                 onPressed: () {
-                  if (formKey.currentState?.validate() ?? false) auth.login();
+                  if (formKey.currentState?.validate() ?? false) {
+                    auth.add(
+                      AuthLoginRequested(
+                        email: emailController.text,
+                        password: passwordController.text,
+                      ),
+                    );
+                  }
                 },
               ),
+              InlineErrorText(message: auth.state.errorMessage),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: auth.toggleRole,
+                onPressed: () => auth.add(const AuthRoleToggled()),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 52),
                   foregroundColor: AppColors.primary,
@@ -160,10 +171,9 @@ class _LoginPageState extends State<LoginPage> {
                     const Icon(Icons.swap_horiz_rounded),
                     const SizedBox(width: 8),
                     Flexible(
-                      child: Obx(
-                        () => Text(
+                      child: Builder(builder: (context) => Text(
                           '${'demo_role_hint'.tr}: '
-                          '${auth.selectedRole.value == UserRole.buyer ? 'buyer'.tr : 'supplier'.tr}',
+                          '${auth.state.role == UserRole.buyer ? 'buyer'.tr : 'supplier'.tr}',
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -183,7 +193,7 @@ class _LoginPageState extends State<LoginPage> {
                     style: const TextStyle(color: AppColors.muted),
                   ),
                   TextButton(
-                    onPressed: () => Get.toNamed(AppRoutes.profileSelection),
+                    onPressed: () => AppNav.push(AppRoutes.profileSelection),
                     child: Text('create_account'.tr),
                   ),
                 ],
@@ -194,13 +204,13 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   TextButton(
                     onPressed: () =>
-                        auth.changeLanguage(const Locale('en', 'US')),
+                        auth.add(const AuthLanguageChanged(Locale('en', 'US'))),
                     child: Text('english'.tr),
                   ),
                   const Text('·'),
                   TextButton(
                     onPressed: () =>
-                        auth.changeLanguage(const Locale('ar', 'SA')),
+                        auth.add(const AuthLanguageChanged(Locale('ar', 'SA'))),
                     child: Text('arabic'.tr),
                   ),
                 ],
@@ -211,6 +221,10 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+}
+
+bool _isEmail(String value) {
+  return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value.trim());
 }
 
 class _RoleButton extends StatelessWidget {

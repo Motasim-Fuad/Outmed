@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:outmed/config/routes/app_routes.dart';
+import 'package:outmed/core/di/injection.dart';
 import 'package:outmed/main.dart';
 
 void main() {
+  setUp(() async {
+    await getIt.reset();
+  });
+
   testWidgets('shows localized OutMed onboarding', (tester) async {
     await tester.pumpWidget(const OutMedApp());
     await tester.pumpAndSettle();
@@ -21,7 +26,7 @@ void main() {
 
     await tester.pumpWidget(
       const OutMedApp(
-        initialRoute: AppRoutes.login,
+        initialLocation: AppRoutes.login,
         locale: Locale('ar', 'SA'),
       ),
     );
@@ -40,7 +45,11 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        OutMedApp(initialRoute: route, locale: const Locale('ar', 'SA')),
+        OutMedApp(
+          initialLocation: route,
+          locale: const Locale('ar', 'SA'),
+          startAuthenticated: true,
+        ),
       );
       await tester.pumpAndSettle();
 

@@ -15,8 +15,8 @@ OutMed is a Flutter app that connects **healthcare buyers** (hospitals / facilit
 | **Type** | B2B marketplace (buyer ↔ supplier) |
 | **Domain** | Medical supplies, PPE, surgical, diagnostic kits |
 | **Platform** | Flutter (iOS / Android), English + Arabic (RTL) |
-| **State / architecture** | GetX, feature-based (clean architecture folders) |
-| **Data** | In-app mock catalog & orders (no live backend yet) |
+| **State / architecture** | BLoC (`flutter_bloc`), `get_it`, `go_router` |
+| **Data** | Mock catalog by default; Dio client for the real API; SQLite cache |
 | **Roles** | **Buyer** (healthcare facility) and **Supplier** (vendor) |
 
 ### Buyer (hospital / facility)
@@ -91,13 +91,25 @@ flutter pub get
 flutter run
 ```
 
-Demo login uses the in-app buyer / supplier profile switch. No backend is required for this mock.
+Demo login accepts any non-empty email and password and uses the buyer / supplier switch on the login screen. The default environment is `mock`.
+
+To call the API the backend shared:
+
+```bash
+flutter run --dart-define=APP_ENV=dev --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_replace_me
+```
+
+Optional base URL override: `--dart-define=API_BASE_URL=https://your-host`. Docs: `https://<host>/api/docs`.
+
+Firebase stays off until you pass `--dart-define=FIREBASE_ENABLED=true` and add the platform config files. See `docs/release.md` and `docs/adr/0001-bloc-sqlite-dio.md`.
 
 ---
 
 ## Stack
 
 - Flutter 3 / Dart 3
-- GetX (routing, state, i18n)
-- `flutter_svg`, `image_picker`
+- `flutter_bloc`, `get_it`, `go_router`, `dio`, `sqflite`
+- Stripe payment sheet (publishable key only)
+- `flutter_svg`, `image_picker`, `shimmer`
 - Feature modules: `auth`, `buyer`, `supplier`, `catalog`, `cart`, `orders`, `messages`, `profile`
+- CI: GitHub Actions (`.github/workflows/ci.yml`)

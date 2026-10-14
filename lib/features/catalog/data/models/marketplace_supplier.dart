@@ -39,7 +39,7 @@ class MarketplaceSupplier {
     aboutKey: 'about_marsh',
   );
 
-  static const all = [healthCare, marshMedical];
+  static const List<MarketplaceSupplier> all = [healthCare, marshMedical];
 
   static MarketplaceSupplier byName(String name) {
     return all.firstWhere(

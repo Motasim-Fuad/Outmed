@@ -19,6 +19,25 @@ class ProductModel {
     this.addedOn = '10 Aug 2026',
   });
 
+  factory ProductModel.fromJson(Map<String, Object?> json) {
+    return ProductModel(
+      id: json['id']! as String,
+      name: json['name']! as String,
+      category: json['category']! as String,
+      manufacturer: json['manufacturer']! as String,
+      reference: json['reference']! as String,
+      packSize: json['packSize']! as String,
+      imageAsset: json['imageAsset']! as String,
+      brand: json['brand'] as String? ?? '',
+      specifications: json['specifications'] as String? ?? '',
+      barcode: json['barcode'] as String? ?? '',
+      countryOfOrigin: json['countryOfOrigin'] as String? ?? '',
+      storageRequirements: json['storageRequirements'] as String? ?? '',
+      documentName: json['documentName'] as String? ?? '',
+      addedOn: json['addedOn'] as String? ?? '',
+    );
+  }
+
   final String id;
   final String name;
   final String category;
@@ -37,6 +56,23 @@ class ProductModel {
 
   String get searchableText =>
       '$name $category $brand $manufacturer $reference $barcode'.toLowerCase();
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'category': category,
+    'manufacturer': manufacturer,
+    'reference': reference,
+    'packSize': packSize,
+    'imageAsset': imageAsset,
+    'brand': brand,
+    'specifications': specifications,
+    'barcode': barcode,
+    'countryOfOrigin': countryOfOrigin,
+    'storageRequirements': storageRequirements,
+    'documentName': documentName,
+    'addedOn': addedOn,
+  };
 }
 
 class SupplierOfferModel {
@@ -50,6 +86,19 @@ class SupplierOfferModel {
     this.minimumOrder = 1,
     this.preparationDays = 2,
   });
+
+  factory SupplierOfferModel.fromJson(Map<String, Object?> json) {
+    return SupplierOfferModel(
+      id: json['id']! as String,
+      productId: json['productId']! as String,
+      supplierName: json['supplierName']! as String,
+      price: (json['price']! as num).toDouble(),
+      stock: json['stock']! as int,
+      description: json['description'] as String? ?? '',
+      minimumOrder: json['minimumOrder'] as int? ?? 1,
+      preparationDays: json['preparationDays'] as int? ?? 2,
+    );
+  }
 
   final String id;
   final String productId;
@@ -78,4 +127,15 @@ class SupplierOfferModel {
       preparationDays: preparationDays ?? this.preparationDays,
     );
   }
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'productId': productId,
+    'supplierName': supplierName,
+    'price': price,
+    'stock': stock,
+    'description': description,
+    'minimumOrder': minimumOrder,
+    'preparationDays': preparationDays,
+  };
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 

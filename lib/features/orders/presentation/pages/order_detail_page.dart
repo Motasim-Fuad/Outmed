@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:outmed/config/routes/app_routes.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/extensions/iterable_x.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/core/router/route_args.dart';
 import 'package:outmed/features/orders/data/models/order_model.dart';
-import 'package:outmed/features/orders/presentation/controllers/order_controller.dart';
+import 'package:outmed/features/orders/presentation/bloc/order_bloc.dart';
+import 'package:outmed/features/orders/presentation/bloc/order_event.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
+import 'package:outmed/shared/widgets/inline_error_text.dart';
 
 class OrderDetailPage extends StatelessWidget {
   const OrderDetailPage({this.success = false, super.key});
@@ -13,12 +19,12 @@ class OrderDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = Get.arguments as OrderModel;
-    final controller = Get.find<OrderController>();
+    final initial = RouteArgs.maybe<Object>(context)! as OrderModel;
+    final controller = context.watch<OrderBloc>();
     return Scaffold(
       appBar: success ? null : AppBar(title: Text('order_details'.tr)),
       body: SafeArea(
-        child: Obx(() {
+        child: Builder(builder: (context) {
           final order =
               controller.orders.firstWhereOrNull(
                 (item) => item.id == initial.id,
@@ -112,23 +118,19 @@ class OrderDetailPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 26),
-              if (Get.previousRoute != AppRoutes.supplierMain)
+              if (GoRouterState.of(context).uri.queryParameters['from'] != 'supplier')
                 CustomButton(
                   label: 'buy_again'.tr,
                   onPressed: () {
-                    final added = controller.buyAgain(order);
-                    if (!added) {
-                      Get.snackbar('app_name'.tr, 'offer_unavailable'.tr);
-                      return;
-                    }
-                    Get.snackbar('app_name'.tr, 'added_to_cart'.tr);
+                    controller.add(OrderBuyAgainRequested(order));
                   },
                 ),
+              InlineErrorText(message: controller.state.errorMessage),
               if (success) ...[
                 const SizedBox(height: 12),
                 CustomButton(
                   label: 'continue_shopping'.tr,
-                  onPressed: () => Get.back(),
+                  onPressed: AppNav.pop,
                 ),
               ],
             ],

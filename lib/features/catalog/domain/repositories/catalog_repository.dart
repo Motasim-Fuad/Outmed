@@ -1,5 +1,9 @@
 import 'package:outmed/features/catalog/data/models/product_model.dart';
 
+class DuplicateProductException implements Exception {
+  const DuplicateProductException();
+}
+
 abstract interface class CatalogRepository {
   List<ProductModel> getProducts();
   List<SupplierOfferModel> getOffers();
@@ -9,4 +13,5 @@ abstract interface class CatalogRepository {
   ProductModel createMasterProduct(ProductModel product);
   SupplierOfferModel saveOffer(SupplierOfferModel offer);
   bool deleteOffer(String id);
+  Future<void> refreshRemote();
 }

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_assets.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 import 'package:outmed/shared/widgets/outmed_logo.dart';
@@ -18,7 +21,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final pageController = PageController();
   int currentPage = 0;
 
-  static const pages = [
+  static const List<({String body, String image, String title})> pages = [
     (
       image: AppAssets.catalogIllustration,
       title: 'onboarding_title_1',
@@ -57,7 +60,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   const OutMedLogo(height: 40),
                   const Spacer(),
                   TextButton(
-                    onPressed: () => Get.offAllNamed(AppRoutes.authLanding),
+                    onPressed: () => AppNav.go(AppRoutes.authLanding),
                     child: Text('skip'.tr),
                   ),
                 ],
@@ -128,12 +131,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 label: lastPage ? 'get_started'.tr : 'continue'.tr,
                 onPressed: () {
                   if (lastPage) {
-                    Get.offAllNamed(AppRoutes.authLanding);
+                    AppNav.go(AppRoutes.authLanding);
                     return;
                   }
-                  pageController.nextPage(
-                    duration: const Duration(milliseconds: 280),
-                    curve: Curves.easeOut,
+                  unawaited(
+                    pageController.nextPage(
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeOut,
+                    ),
                   );
                 },
               ),

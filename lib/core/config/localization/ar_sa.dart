@@ -295,4 +295,12 @@ const Map<String, String> arSa = {
   'shipped': 'تم الشحن',
   'all_products_filter': 'كل المنتجات',
   'product_count_label': '@count منتجات',
+  'request_failed': 'فشل الطلب',
+  'offline_banner': 'أنت غير متصل. ستتم المزامنة عند عودة الاتصال.',
+  'maintenance_title': 'OutMed قيد الصيانة',
+  'maintenance_body': 'حاول مرة أخرى بعد قليل.',
+  'force_update_title': 'يلزم التحديث',
+  'force_update_body': 'ثبّت أحدث إصدار للمتابعة.',
+  'payment_failed': 'تعذر بدء الدفع.',
+  'unexpected_error': 'حدث خطأ غير متوقع',
 };

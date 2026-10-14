@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/core/router/route_args.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 
 class VerifyEmailPage extends StatefulWidget {
@@ -13,8 +15,8 @@ class VerifyEmailPage extends StatefulWidget {
 }
 
 class _VerifyEmailPageState extends State<VerifyEmailPage> {
-  final controllers = List.generate(6, (_) => TextEditingController());
-  final nodes = List.generate(6, (_) => FocusNode());
+  final List<TextEditingController> controllers = List.generate(6, (_) => TextEditingController());
+  final List<FocusNode> nodes = List.generate(6, (_) => FocusNode());
 
   @override
   void dispose() {
@@ -31,7 +33,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final email = Get.arguments as String? ?? 'demo@outmed.sa';
+    final email = RouteArgs.maybe<Object>(context) as String? ?? 'demo@outmed.sa';
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(title: Text('verify_email'.tr)),
@@ -100,7 +102,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
               CustomButton(
                 label: 'verify'.tr,
                 onPressed: code.length == 6
-                    ? () => Get.toNamed(AppRoutes.newPassword)
+                    ? () => AppNav.push(AppRoutes.newPassword)
                     : null,
               ),
             ],

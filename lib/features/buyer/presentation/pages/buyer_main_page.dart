@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_assets.dart';
 import 'package:outmed/core/constants/app_colors.dart';
-import 'package:outmed/features/cart/presentation/controllers/cart_controller.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/core/status/load_status.dart';
+import 'package:outmed/features/buyer/presentation/pages/widgets/buyer_home_shimmer.dart';
+import 'package:outmed/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:outmed/features/cart/presentation/bloc/cart_event.dart';
 import 'package:outmed/features/cart/presentation/pages/cart_page.dart';
 import 'package:outmed/features/catalog/data/models/marketplace_supplier.dart';
-import 'package:outmed/features/catalog/presentation/controllers/catalog_controller.dart';
+import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
+import 'package:outmed/features/catalog/presentation/bloc/catalog_event.dart';
 import 'package:outmed/features/messages/presentation/pages/messages_page.dart';
 import 'package:outmed/features/orders/data/models/order_model.dart';
-import 'package:outmed/features/orders/presentation/controllers/order_controller.dart';
+import 'package:outmed/features/orders/presentation/bloc/order_bloc.dart';
 import 'package:outmed/features/profile/presentation/pages/profile_page.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 import 'package:outmed/shared/widgets/custom_bottom_nav.dart';
@@ -26,7 +32,7 @@ class BuyerMainPage extends StatefulWidget {
 class _BuyerMainPageState extends State<BuyerMainPage> {
   int currentIndex = 0;
 
-  late final pages = const [
+  late final List<Widget> pages = const [
     _BuyerHome(),
     _CategoriesPage(),
     CartPage(),
@@ -79,13 +85,14 @@ class _BuyerHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final catalog = Get.find<CatalogController>();
-    final cart = Get.find<CartController>();
+    final catalog = context.watch<CatalogBloc>();
+    final cart = context.watch<CartBloc>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
-        child: Obx(
-          () => ListView(
+        child: catalog.state.status == LoadStatus.loading
+            ? const BuyerHomeShimmer()
+            : Builder(builder: (context) => ListView(
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
             children: [
               Row(
@@ -130,7 +137,7 @@ class _BuyerHome extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               TextField(
-                onChanged: (value) => catalog.searchQuery.value = value,
+                onChanged: (value) => catalog.add(CatalogSearchChanged(value)),
                 decoration: InputDecoration(
                   hintText: 'search_placeholder'.tr,
                   prefixIcon: const Icon(Icons.search_rounded),
@@ -200,7 +207,7 @@ class _BuyerHome extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           GestureDetector(
-                            onTap: () => Get.toNamed(AppRoutes.allProducts),
+                            onTap: () => AppNav.push(AppRoutes.allProducts),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -241,7 +248,7 @@ class _BuyerHome extends StatelessWidget {
               const SizedBox(height: 22),
               _SectionHeader(
                 title: 'shop_by_category'.tr,
-                onViewAll: () => Get.toNamed(AppRoutes.allProducts),
+                onViewAll: () => AppNav.push(AppRoutes.allProducts),
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -253,41 +260,41 @@ class _BuyerHome extends StatelessWidget {
                       icon: Icons.apps_rounded,
                       label: 'all'.tr,
                       selected: true,
-                      onTap: () => Get.toNamed(AppRoutes.allProducts),
+                      onTap: () => AppNav.push(AppRoutes.allProducts),
                     ),
                     _RoundCategory(
                       icon: Icons.health_and_safety_outlined,
                       label: 'ppe'.tr,
-                      onTap: () => Get.toNamed(
+                      onTap: () => AppNav.push(
                         AppRoutes.categoryProducts,
-                        arguments: 'PPE & Safety',
+                        extra: 'PPE & Safety',
                       ),
                     ),
                     _RoundCategory(
                       icon: Icons.cut_rounded,
                       label: 'surgical'.tr,
-                      onTap: () => Get.toNamed(
+                      onTap: () => AppNav.push(
                         AppRoutes.categoryProducts,
-                        arguments: 'Surgical',
+                        extra: 'Surgical',
                       ),
                     ),
                     _RoundCategory(
                       icon: Icons.monitor_heart_outlined,
                       label: 'diagnostic'.tr,
-                      onTap: () => Get.toNamed(
+                      onTap: () => AppNav.push(
                         AppRoutes.categoryProducts,
-                        arguments: 'Diagnostic',
+                        extra: 'Diagnostic',
                       ),
                     ),
                     _RoundCategory(
                       icon: Icons.medication_outlined,
                       label: 'medicine'.tr,
-                      onTap: () => Get.toNamed(AppRoutes.allProducts),
+                      onTap: () => AppNav.push(AppRoutes.allProducts),
                     ),
                     _RoundCategory(
                       icon: Icons.more_horiz_rounded,
                       label: 'more'.tr,
-                      onTap: () => Get.toNamed(AppRoutes.allProducts),
+                      onTap: () => AppNav.push(AppRoutes.allProducts),
                     ),
                   ],
                 ),
@@ -295,7 +302,7 @@ class _BuyerHome extends StatelessWidget {
               const SizedBox(height: 18),
               _SectionHeader(
                 title: 'featured_products'.tr,
-                onViewAll: () => Get.toNamed(AppRoutes.allProducts),
+                onViewAll: () => AppNav.push(AppRoutes.allProducts),
               ),
               const SizedBox(height: 12),
               GridView.builder(
@@ -314,15 +321,15 @@ class _BuyerHome extends StatelessWidget {
                   return ProductCard(
                     product: product,
                     offer: offer,
-                    onTap: () => Get.toNamed(
+                    onTap: () => AppNav.push(
                       AppRoutes.productDetail,
-                      arguments: product,
+                      extra: product,
                     ),
                     onAdd: offer == null
                         ? null
                         : () {
-                            cart.add(product: product, offer: offer);
-                            Get.snackbar('app_name'.tr, 'added_to_cart'.tr);
+                            cart.add(CartItemAdded(product: product, offer: offer));
+
                           },
                   );
                 },
@@ -330,7 +337,7 @@ class _BuyerHome extends StatelessWidget {
               const SizedBox(height: 22),
               _SectionHeader(
                 title: 'top_suppliers'.tr,
-                onViewAll: () => Get.toNamed(AppRoutes.allSuppliers),
+                onViewAll: () => AppNav.push(AppRoutes.allSuppliers),
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -455,7 +462,7 @@ class _SupplierCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlossyCard(
-      onTap: () => Get.toNamed(AppRoutes.supplierProfile, arguments: supplier),
+      onTap: () => AppNav.push(AppRoutes.supplierProfile, extra: supplier),
       padding: const EdgeInsets.all(10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -528,7 +535,7 @@ class _CategoriesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<CatalogController>();
+    final controller = context.watch<CatalogBloc>();
     final categories = [
       ('PPE & Safety', Icons.health_and_safety_outlined, 'ppe'),
       ('Surgical', Icons.cut_rounded, 'surgical_instruments'),
@@ -579,9 +586,9 @@ class _CategoriesPage extends StatelessWidget {
                     .where((p) => p.category == category.$1)
                     .length;
                 return GlossyCard(
-                  onTap: () => Get.toNamed(
+                  onTap: () => AppNav.push(
                     AppRoutes.categoryProducts,
-                    arguments: category.$1,
+                    extra: category.$1,
                   ),
                   padding: const EdgeInsets.all(10),
                   child: Column(
@@ -625,7 +632,7 @@ class _CategoriesPage extends StatelessWidget {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => Get.toNamed(AppRoutes.buyerOrders),
+                  onPressed: () => AppNav.push(AppRoutes.buyerOrders),
                   child: Text('view_all'.tr),
                 ),
               ],
@@ -643,11 +650,11 @@ class _OrderShortcut extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<OrderController>();
-    return Obx(() {
+    final controller = context.watch<OrderBloc>();
+    return Builder(builder: (context) {
       final order = controller.orders.first;
       return GlossyCard(
-        onTap: () => Get.toNamed(AppRoutes.orderDetail, arguments: order),
+        onTap: () => AppNav.push(AppRoutes.orderDetail, extra: order),
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [

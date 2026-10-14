@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/shared/widgets/glossy_card.dart';
 
 class MessagesPage extends StatefulWidget {
@@ -33,9 +34,9 @@ class _MessagesPageState extends State<MessagesPage> {
             Row(
               children: [
                 if (widget.showBack)
-                  IconButton(
-                    onPressed: Get.back,
-                    icon: const Icon(Icons.arrow_back_rounded),
+                  const IconButton(
+                    onPressed: AppNav.pop,
+                    icon: Icon(Icons.arrow_back_rounded),
                   ),
                 Expanded(
                   child: Text(
@@ -92,9 +93,9 @@ class _MessagesPageState extends State<MessagesPage> {
                   (conversation) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: GlossyCard(
-                      onTap: () => Get.toNamed(
+                      onTap: () => AppNav.push(
                         AppRoutes.chat,
-                        arguments: conversation.$1,
+                        extra: conversation.$1,
                       ),
                       padding: const EdgeInsets.all(13),
                       child: Row(

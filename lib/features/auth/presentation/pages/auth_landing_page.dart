@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_assets.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 import 'package:outmed/shared/widgets/outmed_logo.dart';
@@ -19,7 +20,7 @@ class AuthLandingPage extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 22),
           child: Column(
             children: [
-              const OutMedLogo(height: 44),
+              const OutMedLogo(),
               const Spacer(),
               Container(
                 height: 230,
@@ -48,21 +49,21 @@ class AuthLandingPage extends StatelessWidget {
                 icon: Icons.email_outlined,
                 color: AppColors.accent,
                 label: 'sign_up_email'.tr,
-                onTap: () => Get.toNamed(AppRoutes.profileSelection),
+                onTap: () => AppNav.push(AppRoutes.profileSelection),
               ),
               const SizedBox(height: 10),
               _SocialButton(
                 icon: Icons.g_mobiledata_rounded,
                 color: AppColors.primary,
                 label: 'sign_up_google'.tr,
-                onTap: () => Get.snackbar('app_name'.tr, 'sign_up_google'.tr),
+                onTap: () {},
               ),
               const SizedBox(height: 10),
               _SocialButton(
                 icon: Icons.apple,
                 color: AppColors.ink,
                 label: 'sign_up_apple'.tr,
-                onTap: () => Get.snackbar('app_name'.tr, 'sign_up_apple'.tr),
+                onTap: () {},
               ),
               const SizedBox(height: 18),
               Text(
@@ -72,7 +73,7 @@ class AuthLandingPage extends StatelessWidget {
               const SizedBox(height: 8),
               CustomButton(
                 label: 'log_in'.tr,
-                onPressed: () => Get.toNamed(AppRoutes.login),
+                onPressed: () => AppNav.push(AppRoutes.login),
               ),
             ],
           ),

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_assets.dart';
 import 'package:outmed/core/constants/app_colors.dart';
-import 'package:outmed/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/features/auth/domain/user_role.dart';
+import 'package:outmed/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:outmed/features/auth/presentation/bloc/auth_event.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 import 'package:outmed/shared/widgets/glossy_card.dart';
@@ -13,15 +17,14 @@ class ProfileSelectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Get.find<AuthController>();
+    final auth = context.watch<AuthBloc>();
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(title: Text('select_profile'.tr)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-          child: Obx(
-            () => Column(
+          child: Builder(builder: (context) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -37,8 +40,8 @@ class ProfileSelectionPage extends StatelessWidget {
                         title: 'healthcare_facility'.tr,
                         subtitle: 'healthcare_facility_hint'.tr,
                         image: AppAssets.healthFacility,
-                        selected: auth.selectedRole.value == UserRole.buyer,
-                        onTap: () => auth.selectRole(UserRole.buyer),
+                        selected: auth.state.role == UserRole.buyer,
+                        onTap: () => auth.add(const AuthRoleSelected(UserRole.buyer)),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -47,17 +50,17 @@ class ProfileSelectionPage extends StatelessWidget {
                         title: 'suppliers'.tr,
                         subtitle: 'suppliers_hint'.tr,
                         image: AppAssets.supplierWarehouse,
-                        selected: auth.selectedRole.value == UserRole.supplier,
-                        onTap: () => auth.selectRole(UserRole.supplier),
+                        selected: auth.state.role == UserRole.supplier,
+                        onTap: () => auth.add(const AuthRoleSelected(UserRole.supplier)),
                       ),
                     ),
                   ],
                 ),
                 const Spacer(),
                 CheckboxListTile(
-                  value: auth.acceptedTerms.value,
+                  value: auth.state.acceptedTerms,
                   onChanged: (value) =>
-                      auth.acceptedTerms.value = value ?? false,
+                      auth.add(AuthTermsChanged(accepted: value ?? false)),
                   contentPadding: EdgeInsets.zero,
                   controlAffinity: ListTileControlAffinity.leading,
                   activeColor: AppColors.primary,
@@ -68,8 +71,8 @@ class ProfileSelectionPage extends StatelessWidget {
                 ),
                 CustomButton(
                   label: 'continue'.tr,
-                  onPressed: auth.acceptedTerms.value
-                      ? () => Get.toNamed(AppRoutes.registration)
+                  onPressed: auth.state.acceptedTerms
+                      ? () => AppNav.push(AppRoutes.registration)
                       : null,
                 ),
               ],
@@ -117,7 +120,7 @@ class _ProfileTypeCard extends StatelessWidget {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(8),
-                child: AppAssetImage(image, fit: BoxFit.contain),
+                child: AppAssetImage(image),
               ),
             ),
           ),

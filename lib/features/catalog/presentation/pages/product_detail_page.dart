@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/core/router/route_args.dart';
+import 'package:outmed/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:outmed/features/cart/presentation/bloc/cart_event.dart';
 import 'package:outmed/features/catalog/data/models/marketplace_supplier.dart';
-import 'package:outmed/features/cart/presentation/controllers/cart_controller.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
-import 'package:outmed/features/catalog/presentation/controllers/catalog_controller.dart';
+import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 
@@ -22,12 +26,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   late SupplierOfferModel selectedOffer;
   String selectedSize = 'M';
   int quantity = 1;
+  var _hydrated = false;
 
   @override
-  void initState() {
-    super.initState();
-    product = Get.arguments as ProductModel;
-    offers = Get.find<CatalogController>().offersFor(product.id);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hydrated) return;
+    _hydrated = true;
+    product = RouteArgs.maybe<Object>(context)! as ProductModel;
+    offers = context.read<CatalogBloc>().offersFor(product.id);
     selectedOffer = offers.first;
   }
 
@@ -77,9 +84,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   ),
                   const SizedBox(height: 6),
                   InkWell(
-                    onTap: () => Get.toNamed(
+                    onTap: () => AppNav.push(
                       AppRoutes.supplierProfile,
-                      arguments: MarketplaceSupplier.byName(
+                      extra: MarketplaceSupplier.byName(
                         selectedOffer.supplierName,
                       ),
                     ),
@@ -287,9 +294,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 ),
                               ),
                               IconButton(
-                                onPressed: () => Get.toNamed(
+                                onPressed: () => AppNav.push(
                                   AppRoutes.supplierProfile,
-                                  arguments: MarketplaceSupplier.byName(
+                                  extra: MarketplaceSupplier.byName(
                                     offer.supplierName,
                                   ),
                                 ),
@@ -313,17 +320,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 label: 'add_to_cart'.tr,
                 icon: Icons.shopping_cart_outlined,
                 onPressed: () {
-                  Get.find<CartController>().add(
-                    product: product,
-                    offer: selectedOffer,
-                    quantity: quantity,
+                  context.read<CartBloc>().add(
+                    CartItemAdded(
+                      product: product,
+                      offer: selectedOffer,
+                      quantity: quantity,
+                    ),
                   );
-                  Get.snackbar(
-                    'app_name'.tr,
-                    'added_to_cart'.tr,
-                    snackPosition: SnackPosition.BOTTOM,
-                    margin: const EdgeInsets.all(16),
-                  );
+
                 },
               ),
             ),

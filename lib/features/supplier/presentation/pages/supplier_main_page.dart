@@ -1,13 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
-import 'package:outmed/features/messages/presentation/pages/messages_page.dart';
 import 'package:outmed/features/orders/data/models/order_model.dart';
-import 'package:outmed/features/orders/presentation/controllers/order_controller.dart';
+import 'package:outmed/features/orders/presentation/bloc/order_bloc.dart';
+import 'package:outmed/features/orders/presentation/bloc/order_event.dart';
 import 'package:outmed/features/profile/presentation/pages/profile_page.dart';
-import 'package:outmed/features/supplier/presentation/controllers/supplier_controller.dart';
+import 'package:outmed/features/supplier/presentation/bloc/supplier_bloc.dart';
+import 'package:outmed/features/supplier/presentation/bloc/supplier_event.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 import 'package:outmed/shared/widgets/custom_bottom_nav.dart';
 import 'package:outmed/shared/widgets/glossy_card.dart';
@@ -17,9 +22,9 @@ class SupplierMainPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final supplier = Get.find<SupplierController>();
-    return Obx(() {
-      final currentIndex = supplier.shellIndex.value;
+    final supplier = context.watch<SupplierBloc>();
+    return Builder(builder: (context) {
+      final currentIndex = supplier.state.shellIndex;
       return Scaffold(
         body: IndexedStack(
           index: currentIndex,
@@ -35,10 +40,10 @@ class SupplierMainPage extends StatelessWidget {
           currentIndex: currentIndex,
           onDestinationSelected: (index) {
             if (index == 2) {
-              Get.toNamed(AppRoutes.addOffer);
+              AppNav.push(AppRoutes.addOffer);
               return;
             }
-            supplier.shellIndex.value = index;
+            supplier.add(SupplierShellSelected(index));
           },
           destinations: [
             NavDestination(
@@ -75,7 +80,7 @@ class SupplierMainPage extends StatelessWidget {
 }
 
 void _openMessages() {
-  Get.to(() => const MessagesPage(showBack: true));
+  AppNav.push('${AppRoutes.messages}?back=1');
 }
 
 class _SupplierHome extends StatelessWidget {
@@ -83,12 +88,12 @@ class _SupplierHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final supplier = Get.find<SupplierController>();
-    final orders = Get.find<OrderController>();
+    final supplier = context.watch<SupplierBloc>();
+    final orders = context.watch<OrderBloc>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
-        child: Obx(() {
+        child: Builder(builder: (context) {
           final today = DateTime.now();
           final todaysOrders = orders.orders
               .where(
@@ -103,7 +108,7 @@ class _SupplierHome extends StatelessWidget {
           final pendingCount = orders.orders
               .where((order) => order.status == OrderStatus.pending)
               .length;
-          final lowStock = supplier.ownOffers
+          final lowStock = supplier.state.offers
               .where((offer) => offer.stock > 0 && offer.stock < 20)
               .toList();
           return ListView(
@@ -150,9 +155,9 @@ class _SupplierHome extends StatelessWidget {
                     onPressed: () {},
                     icon: const Icon(Icons.notifications_none_rounded),
                   ),
-                  IconButton(
+                  const IconButton(
                     onPressed: _openMessages,
-                    icon: const Icon(Icons.chat_bubble_outline_rounded),
+                    icon: Icon(Icons.chat_bubble_outline_rounded),
                   ),
                 ],
               ),
@@ -172,7 +177,7 @@ class _SupplierHome extends StatelessWidget {
                       icon: Icons.add_box_outlined,
                       title: 'add_product'.tr,
                       subtitle: 'add_new_product'.tr,
-                      onTap: () => Get.toNamed(AppRoutes.addOffer),
+                      onTap: () => AppNav.push(AppRoutes.addOffer),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -181,7 +186,7 @@ class _SupplierHome extends StatelessWidget {
                       icon: Icons.inventory_2_outlined,
                       title: 'update_stock'.tr,
                       subtitle: 'manage_inventory'.tr,
-                      onTap: () => supplier.shellIndex.value = 3,
+                      onTap: () => supplier.add(const SupplierShellSelected(3)),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -190,7 +195,7 @@ class _SupplierHome extends StatelessWidget {
                       icon: Icons.shopping_cart_outlined,
                       title: 'orders'.tr,
                       subtitle: 'manage_orders'.tr,
-                      onTap: () => supplier.shellIndex.value = 1,
+                      onTap: () => supplier.add(const SupplierShellSelected(1)),
                     ),
                   ),
                 ],
@@ -198,7 +203,7 @@ class _SupplierHome extends StatelessWidget {
               const SizedBox(height: 22),
               _SectionLink(
                 title: 'recent_orders'.tr,
-                onViewAll: () => supplier.shellIndex.value = 1,
+                onViewAll: () => supplier.add(const SupplierShellSelected(1)),
               ),
               const SizedBox(height: 10),
               ...orders.orders
@@ -207,7 +212,7 @@ class _SupplierHome extends StatelessWidget {
               const SizedBox(height: 12),
               _SectionLink(
                 title: 'low_stock_alert'.tr,
-                onViewAll: () => supplier.shellIndex.value = 3,
+                onViewAll: () => supplier.add(const SupplierShellSelected(3)),
               ),
               const SizedBox(height: 10),
               ...lowStock.map(
@@ -274,7 +279,7 @@ class _DashboardSummaryCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(18.0),
+            padding: const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -518,7 +523,7 @@ class _RecentOrderTile extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: () =>
-                      Get.toNamed(AppRoutes.orderDetail, arguments: order),
+                      AppNav.push('${AppRoutes.orderDetail}?from=supplier', extra: order),
                   style: TextButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -632,9 +637,9 @@ class _InventoryBodyState extends State<_InventoryBody> {
 
   @override
   Widget build(BuildContext context) {
-    final supplier = Get.find<SupplierController>();
-    return Obx(() {
-      final offers = supplier.ownOffers;
+    final supplier = context.watch<SupplierBloc>();
+    return Builder(builder: (context) {
+      final offers = supplier.state.offers;
       final inStock = offers.where((offer) => offer.stock >= 20).length;
       final lowStock = offers
           .where((offer) => offer.stock > 0 && offer.stock < 20)
@@ -677,9 +682,9 @@ class _InventoryBodyState extends State<_InventoryBody> {
                 onPressed: () {},
                 icon: const Icon(Icons.notifications_none_rounded),
               ),
-              IconButton(
+              const IconButton(
                 onPressed: _openMessages,
-                icon: const Icon(Icons.chat_bubble_outline_rounded),
+                icon: Icon(Icons.chat_bubble_outline_rounded),
               ),
             ],
           ),
@@ -934,12 +939,11 @@ class _SupplierOrders extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final orders = Get.find<OrderController>();
+    final orders = context.watch<OrderBloc>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
-        child: Obx(
-          () => ListView(
+        child: Builder(builder: (context) => ListView(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 100),
             children: [
               Text(
@@ -997,7 +1001,7 @@ class _SupplierOrders extends StatelessWidget {
                           SizedBox(
                             width: double.infinity,
                             child: FilledButton(
-                              onPressed: () => orders.advanceStatus(order.id),
+                              onPressed: () => orders.add(OrderStatusAdvanced(order.id)),
                               style: FilledButton.styleFrom(
                                 backgroundColor: AppColors.primary,
                               ),
@@ -1099,11 +1103,11 @@ class _OfferActions extends StatelessWidget {
       onSelected: (value) {
         switch (value) {
           case 'stock':
-            Get.toNamed(AppRoutes.updateStock, arguments: offer);
+            AppNav.push(AppRoutes.updateStock, extra: offer);
           case 'edit':
-            Get.toNamed(AppRoutes.addOffer, arguments: offer);
+            AppNav.push(AppRoutes.addOffer, extra: offer);
           case 'delete':
-            _confirmDeleteOffer(offer);
+            unawaited(_confirmDeleteOffer(context, offer));
         }
       },
       itemBuilder: (context) => [
@@ -1133,27 +1137,29 @@ class _OfferActions extends StatelessWidget {
   }
 }
 
-Future<void> _confirmDeleteOffer(SupplierOfferModel offer) async {
-  final confirmed = await Get.dialog<bool>(
-    AlertDialog(
-      title: Text('delete_offer'.tr),
-      content: Text('confirm_delete_offer'.tr),
-      actions: [
-        TextButton(
-          onPressed: () => Get.back(result: false),
-          child: Text('cancel'.tr),
-        ),
-        TextButton(
-          onPressed: () => Get.back(result: true),
-          style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-          child: Text('delete'.tr),
-        ),
-      ],
-    ),
+Future<void> _confirmDeleteOffer(BuildContext context, SupplierOfferModel offer) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: Text('delete_offer'.tr),
+        content: Text('confirm_delete_offer'.tr),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text('cancel'.tr),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            child: Text('delete'.tr),
+          ),
+        ],
+      );
+    },
   );
-  if (confirmed == true) {
-    Get.find<SupplierController>().deleteOffer(offer.id);
-    Get.snackbar('app_name'.tr, 'offer_deleted'.tr);
+  if (confirmed == true && context.mounted) {
+    context.read<SupplierBloc>().add(SupplierOfferDeleteRequested(offer.id));
   }
 }
 

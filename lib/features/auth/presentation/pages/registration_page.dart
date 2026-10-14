@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/shared/widgets/app_text_field.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 
@@ -13,7 +14,7 @@ class RegistrationPage extends StatefulWidget {
 }
 
 class _RegistrationPageState extends State<RegistrationPage> {
-  final controllers = List.generate(14, (_) => TextEditingController());
+  final List<TextEditingController> controllers = List.generate(14, (_) => TextEditingController());
   int step = 0;
 
   @override
@@ -114,8 +115,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         setState(() => step = 1);
                         return;
                       }
-                      Get.offAllNamed(AppRoutes.login);
-                      Get.snackbar('app_name'.tr, 'registration_submitted'.tr);
+                      AppNav.go(AppRoutes.login);
+
                     },
                   ),
                 ),
@@ -137,7 +138,7 @@ class _StepBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _Dot(active: true, label: '1'),
+        const _Dot(active: true, label: '1'),
         Expanded(
           child: Container(
             height: 3,

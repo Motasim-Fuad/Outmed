@@ -1,14 +1,20 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/core/router/route_args.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
-import 'package:outmed/features/supplier/presentation/controllers/supplier_controller.dart';
+import 'package:outmed/features/supplier/presentation/bloc/supplier_bloc.dart';
+import 'package:outmed/features/supplier/presentation/bloc/supplier_event.dart';
+import 'package:outmed/features/supplier/presentation/bloc/supplier_state.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 import 'package:outmed/shared/widgets/app_text_field.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
+import 'package:outmed/shared/widgets/inline_error_text.dart';
 
 class AddOfferPage extends StatefulWidget {
   const AddOfferPage({super.key});
@@ -18,7 +24,6 @@ class AddOfferPage extends StatefulWidget {
 }
 
 class _AddOfferPageState extends State<AddOfferPage> {
-  final supplier = Get.find<SupplierController>();
   final formKey = GlobalKey<FormState>();
   final searchController = TextEditingController();
   final nameController = TextEditingController();
@@ -40,21 +45,26 @@ class _AddOfferPageState extends State<AddOfferPage> {
   SupplierOfferModel? existing;
   bool showCreateForm = false;
   Uint8List? selectedImageBytes;
+  bool _hydrated = false;
+  String imageError = '';
 
   @override
-  void initState() {
-    super.initState();
-    if (Get.arguments case final SupplierOfferModel offer) {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hydrated) return;
+    _hydrated = true;
+    final supplier = context.read<SupplierBloc>();
+    if (RouteArgs.maybe<Object>(context) case final SupplierOfferModel offer) {
       existing = offer;
       final product = supplier.productForOffer(offer);
-      if (product != null) supplier.selectProduct(product);
+      if (product != null) supplier.add(SupplierProductSelected(product));
       priceController.text = offer.price.toStringAsFixed(2);
       stockController.text = '${offer.stock}';
       descriptionController.text = offer.description;
       minimumOrderController.text = '${offer.minimumOrder}';
       preparationController.text = '${offer.preparationDays}';
     } else {
-      supplier.clearSelection();
+      supplier.add(const SupplierSelectionCleared());
     }
   }
 
@@ -82,7 +92,11 @@ class _AddOfferPageState extends State<AddOfferPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final supplier = context.watch<SupplierBloc>();
+    return BlocListener<SupplierBloc, SupplierState>(
+      listenWhen: (previous, current) => !previous.closePage && current.closePage,
+      listener: (context, state) => AppNav.pop(),
+      child: Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(
@@ -91,11 +105,10 @@ class _AddOfferPageState extends State<AddOfferPage> {
       ),
       body: Form(
         key: formKey,
-        child: Obx(
-          () => ListView(
+        child: Builder(builder: (context) => ListView(
             padding: const EdgeInsets.fromLTRB(18, 10, 18, 28),
             children: [
-              if (supplier.selectedProduct.value == null) ...[
+              if (supplier.state.selectedProduct == null) ...[
                 _SectionHeader(
                   title: 'search_before_create'.tr,
                   subtitle: 'select_master_product_hint'.tr,
@@ -103,7 +116,7 @@ class _AddOfferPageState extends State<AddOfferPage> {
                 TextField(
                   controller: searchController,
                   onChanged: (value) {
-                    supplier.searchQuery.value = value;
+                    supplier.add(SupplierSearchChanged(value));
                     setState(() => showCreateForm = false);
                   },
                   decoration: InputDecoration(
@@ -119,18 +132,18 @@ class _AddOfferPageState extends State<AddOfferPage> {
                 ),
                 const SizedBox(height: 14),
                 if (searchController.text.isNotEmpty &&
-                    supplier.searchResults.isNotEmpty)
-                  ...supplier.searchResults.map(
+                    supplier.state.searchResults.isNotEmpty)
+                  ...supplier.state.searchResults.map(
                     (product) => _SearchProductTile(
                       product: product,
                       onTap: () {
-                        supplier.selectProduct(product);
+                        supplier.add(SupplierProductSelected(product));
                         setState(() => showCreateForm = false);
                       },
                     ),
                   ),
                 if (searchController.text.isNotEmpty &&
-                    supplier.searchResults.isEmpty &&
+                    supplier.state.searchResults.isEmpty &&
                     !showCreateForm)
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -172,20 +185,21 @@ class _AddOfferPageState extends State<AddOfferPage> {
                       ],
                     ),
                   ),
-                if (showCreateForm) _buildCreateForm(),
+                if (showCreateForm) _buildCreateForm(supplier),
               ] else ...[
-                _buildLockedProduct(supplier.selectedProduct.value!),
+                _buildLockedProduct(supplier, supplier.state.selectedProduct!),
                 const SizedBox(height: 20),
-                _buildOfferForm(supplier.selectedProduct.value!),
+                _buildOfferForm(supplier, supplier.state.selectedProduct!),
               ],
             ],
           ),
         ),
       ),
+      ),
     );
   }
 
-  Widget _buildCreateForm() {
+  Widget _buildCreateForm(SupplierBloc supplier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -345,11 +359,12 @@ class _AddOfferPageState extends State<AddOfferPage> {
           onPressed: () {
             if (!(formKey.currentState?.validate() ?? false)) return;
             if (selectedImageBytes == null) {
-              Get.snackbar('app_name'.tr, 'image_required'.tr);
+              setState(() => imageError = 'image_required'.tr);
               return;
             }
-            try {
-              supplier.createMasterProduct(
+            setState(() => imageError = '');
+            supplier.add(
+              SupplierProductCreateRequested(
                 name: nameController.text,
                 brand: brandController.text,
                 category: categoryController.text,
@@ -362,17 +377,12 @@ class _AddOfferPageState extends State<AddOfferPage> {
                 storageRequirements: storageController.text,
                 documentName: documentController.text,
                 imageBytes: selectedImageBytes!,
-              );
-              Get.snackbar('app_name'.tr, 'product_created'.tr);
-            } on StateError {
-              Get.snackbar(
-                'app_name'.tr,
-                'duplicate_product'.tr,
-                backgroundColor: AppColors.danger,
-                colorText: Colors.white,
-              );
-            }
+              ),
+            );
           },
+        ),
+        InlineErrorText(
+          message: imageError.isEmpty ? supplier.state.errorMessage : imageError,
         ),
       ],
     );
@@ -390,7 +400,7 @@ class _AddOfferPageState extends State<AddOfferPage> {
     setState(() => selectedImageBytes = bytes);
   }
 
-  Widget _buildLockedProduct(ProductModel product) {
+  Widget _buildLockedProduct(SupplierBloc supplier, ProductModel product) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -459,7 +469,7 @@ class _AddOfferPageState extends State<AddOfferPage> {
           if (existing == null) ...[
             const SizedBox(height: 10),
             TextButton.icon(
-              onPressed: supplier.clearSelection,
+              onPressed: () => supplier.add(const SupplierSelectionCleared()),
               icon: const Icon(Icons.swap_horiz_rounded),
               label: Text('select_product'.tr),
             ),
@@ -469,7 +479,7 @@ class _AddOfferPageState extends State<AddOfferPage> {
     );
   }
 
-  Widget _buildOfferForm(ProductModel product) {
+  Widget _buildOfferForm(SupplierBloc supplier, ProductModel product) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -534,17 +544,18 @@ class _AddOfferPageState extends State<AddOfferPage> {
           label: existing == null ? 'save_offer'.tr : 'update_offer'.tr,
           onPressed: () {
             if (!(formKey.currentState?.validate() ?? false)) return;
-            supplier.saveOffer(
-              product: product,
-              price: double.parse(priceController.text),
-              stock: int.parse(stockController.text),
-              description: descriptionController.text,
-              minimumOrder: int.parse(minimumOrderController.text),
-              preparationDays: int.parse(preparationController.text),
-              existing: existing,
+            supplier.add(
+              SupplierOfferSaveRequested(
+                product: product,
+                price: double.parse(priceController.text),
+                stock: int.parse(stockController.text),
+                description: descriptionController.text,
+                minimumOrder: int.parse(minimumOrderController.text),
+                preparationDays: int.parse(preparationController.text),
+                existing: existing,
+              ),
             );
-            Get.back<void>();
-            Get.snackbar('app_name'.tr, 'offer_saved'.tr);
+
           },
         ),
       ],

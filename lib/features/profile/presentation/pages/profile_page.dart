@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
-import 'package:outmed/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:outmed/features/auth/presentation/bloc/auth_event.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({required this.supplier, super.key});
@@ -11,7 +16,7 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Get.find<AuthController>();
+    final auth = context.watch<AuthBloc>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
@@ -88,7 +93,7 @@ class ProfilePage extends StatelessWidget {
               _ProfileItem(
                 icon: Icons.receipt_long_outlined,
                 label: 'my_orders'.tr,
-                onTap: () => Get.toNamed(AppRoutes.buyerOrders),
+                onTap: () => AppNav.push(AppRoutes.buyerOrders),
               ),
             if (!supplier)
               _ProfileItem(
@@ -98,7 +103,7 @@ class ProfilePage extends StatelessWidget {
             _ProfileItem(
               icon: Icons.language_rounded,
               label: 'language'.tr,
-              onTap: () => _showLanguagePicker(auth),
+              onTap: () => _showLanguagePicker(context, auth),
             ),
             _ProfileItem(
               icon: Icons.notifications_none_rounded,
@@ -117,7 +122,7 @@ class ProfilePage extends StatelessWidget {
               icon: Icons.logout_rounded,
               label: 'logout'.tr,
               danger: true,
-              onTap: auth.logout,
+              onTap: () => auth.add(const AuthLogoutRequested()),
             ),
           ],
         ),
@@ -125,9 +130,11 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  void _showLanguagePicker(AuthController auth) {
-    Get.bottomSheet<void>(
-      Container(
+  void _showLanguagePicker(BuildContext context, AuthBloc auth) {
+    unawaited(
+      showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => Container(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -163,8 +170,8 @@ class ProfilePage extends StatelessWidget {
                 title: Text('english'.tr),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
-                  auth.changeLanguage(const Locale('en', 'US'));
-                  Get.back<void>();
+                  auth.add(const AuthLanguageChanged(Locale('en', 'US')));
+                  Navigator.pop(context);
                 },
               ),
               ListTile(
@@ -172,13 +179,14 @@ class ProfilePage extends StatelessWidget {
                 title: Text('arabic'.tr),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
-                  auth.changeLanguage(const Locale('ar', 'SA'));
-                  Get.back<void>();
+                  auth.add(const AuthLanguageChanged(Locale('ar', 'SA')));
+                  Navigator.pop(context);
                 },
               ),
             ],
           ),
         ),
+      ),
       ),
     );
   }

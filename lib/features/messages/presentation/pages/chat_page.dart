@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/route_args.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -12,11 +13,14 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final controller = TextEditingController();
   late final List<(bool, String)> messages;
+  var _hydrated = false;
 
   @override
-  void initState() {
-    super.initState();
-    final name = Get.arguments as String? ?? 'HealthCare Supplies';
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hydrated) return;
+    _hydrated = true;
+    final name = RouteArgs.maybe<Object>(context) as String? ?? 'HealthCare Supplies';
     messages = [
       (false, 'Hello, this is $name. How can we help with your order?'),
       (true, 'Can you confirm stock and delivery time?'),
@@ -32,7 +36,7 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final name = Get.arguments as String? ?? 'HealthCare Supplies';
+    final name = RouteArgs.maybe<Object>(context) as String? ?? 'HealthCare Supplies';
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(title: Text(name)),

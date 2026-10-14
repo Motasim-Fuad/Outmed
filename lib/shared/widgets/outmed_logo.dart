@@ -12,7 +12,6 @@ class OutMedLogo extends StatelessWidget {
     return AppAssetImage(
       AppAssets.logo,
       height: height,
-      fit: BoxFit.contain,
     );
   }
 }

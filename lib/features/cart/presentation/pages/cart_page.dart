@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:outmed/config/routes/app_routes.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/core/constants/app_colors.dart';
-import 'package:outmed/features/cart/presentation/controllers/cart_controller.dart';
-import 'package:outmed/features/orders/presentation/controllers/order_controller.dart';
+import 'package:outmed/core/di/injection.dart';
+import 'package:outmed/core/feature_flags/feature_flag_service.dart';
+import 'package:outmed/core/feature_flags/feature_key.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/payments/stripe_payment_service.dart';
+import 'package:outmed/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:outmed/features/cart/presentation/bloc/cart_event.dart';
+import 'package:outmed/features/orders/presentation/bloc/order_bloc.dart';
+import 'package:outmed/features/orders/presentation/bloc/order_event.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
+import 'package:outmed/shared/widgets/inline_error_text.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({this.showAppBar = false, super.key});
@@ -14,12 +21,12 @@ class CartPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cart = Get.find<CartController>();
+    final cart = context.watch<CartBloc>();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: showAppBar ? AppBar(title: Text('your_cart'.tr)) : null,
       body: SafeArea(
-        child: Obx(() {
+        child: Builder(builder: (context) {
           if (cart.items.isEmpty) {
             return Center(
               child: Column(
@@ -121,9 +128,8 @@ class CartPage extends StatelessWidget {
                                       const Spacer(),
                                       _CartQuantityButton(
                                         icon: Icons.remove,
-                                        onTap: () => cart.changeQuantity(
-                                          item.offer.id,
-                                          -1,
+                                        onTap: () => cart.add(
+                                          CartQuantityChanged(item.offer.id, -1),
                                         ),
                                       ),
                                       Padding(
@@ -139,9 +145,8 @@ class CartPage extends StatelessWidget {
                                       ),
                                       _CartQuantityButton(
                                         icon: Icons.add,
-                                        onTap: () => cart.changeQuantity(
-                                          item.offer.id,
-                                          1,
+                                        onTap: () => cart.add(
+                                          CartQuantityChanged(item.offer.id, 1),
                                         ),
                                       ),
                                     ],
@@ -183,13 +188,7 @@ class CartPage extends StatelessWidget {
               Container(
                 color: Colors.white,
                 padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
-                child: CustomButton(
-                  label: 'checkout'.tr,
-                  onPressed: () {
-                    final order = Get.find<OrderController>().placeOrder(cart);
-                    Get.toNamed(AppRoutes.orderSuccess, arguments: order);
-                  },
-                ),
+                child: _CheckoutBar(cart: cart),
               ),
             ],
           );
@@ -257,6 +256,47 @@ class _PriceRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CheckoutBar extends StatefulWidget {
+  const _CheckoutBar({required this.cart});
+
+  final CartBloc cart;
+
+  @override
+  State<_CheckoutBar> createState() => _CheckoutBarState();
+}
+
+class _CheckoutBarState extends State<_CheckoutBar> {
+  String _error = '';
+
+  Future<void> _pay() async {
+    setState(() => _error = '');
+    if (getIt<FeatureFlagService>().isEnabled(FeatureKey.stripePayments)) {
+      final failure = await getIt<StripePaymentService>().pay(
+        amountInMinor: (widget.cart.total * 100).round(),
+        currency: 'sar',
+      );
+      if (!mounted) return;
+      if (failure != null) {
+        setState(() => _error = failure);
+        return;
+      }
+    }
+    context.read<OrderBloc>().add(OrderPlaceRequested(widget.cart.state));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final orderError = context.watch<OrderBloc>().state.errorMessage;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        CustomButton(label: 'checkout'.tr, onPressed: _pay),
+        InlineErrorText(message: _error.isEmpty ? orderError : _error),
+      ],
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:outmed/config/routes/app_routes.dart';
+import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/shared/widgets/app_text_field.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 import 'package:outmed/shared/widgets/outmed_logo.dart';
@@ -50,17 +51,19 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 label: 'email'.tr,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) =>
-                    GetUtils.isEmail(value ?? '') ? null : 'invalid_email'.tr,
+                    RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch((value ?? '').trim())
+                        ? null
+                        : 'invalid_email'.tr,
               ),
               const SizedBox(height: 22),
               CustomButton(
                 label: 'send_code'.tr,
                 onPressed: () {
                   if (!(formKey.currentState?.validate() ?? false)) return;
-                  Get.snackbar('app_name'.tr, 'code_sent'.tr);
-                  Get.toNamed(
+
+                  AppNav.push(
                     AppRoutes.verifyEmail,
-                    arguments: emailController.text,
+                    extra: emailController.text,
                   );
                 },
               ),
