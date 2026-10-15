@@ -7,12 +7,14 @@ class NavDestination {
     required this.activeIcon,
     required this.label,
     this.isCenter = false,
+    this.badge = 0,
   });
 
   final IconData icon;
   final IconData activeIcon;
   final String label;
   final bool isCenter;
+  final int badge;
 }
 
 class CustomBottomNav extends StatelessWidget {
@@ -92,10 +94,15 @@ class CustomBottomNav extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: Icon(
-                          destinations[i].activeIcon,
-                          color: Colors.white,
-                          size: 26,
+                        child: Badge(
+                          isLabelVisible: destinations[i].badge > 0,
+                          label: Text('${destinations[i].badge}'),
+                          backgroundColor: AppColors.danger,
+                          child: Icon(
+                            destinations[i].activeIcon,
+                            color: Colors.white,
+                            size: 26,
+                          ),
                         ),
                       ),
                     ),
@@ -128,10 +135,15 @@ class _NavItem extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            selected ? destination.activeIcon : destination.icon,
-            color: color,
-            size: 20,
+          Badge(
+            isLabelVisible: destination.badge > 0,
+            label: Text('${destination.badge}'),
+            backgroundColor: AppColors.danger,
+            child: Icon(
+              selected ? destination.activeIcon : destination.icon,
+              color: color,
+              size: 20,
+            ),
           ),
           const SizedBox(height: 2),
           Text(

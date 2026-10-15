@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/core/constants/app_colors.dart';
 import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:outmed/features/cart/presentation/bloc/cart_state.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
+import 'package:outmed/shared/widgets/price_tag.dart';
 
 class ProductCard extends StatelessWidget {
   const ProductCard({
@@ -96,15 +100,7 @@ class ProductCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              if (offer != null)
-                Text(
-                  '${'sar'.tr} ${offer!.price.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+              if (offer != null) PriceTag(offer: offer!),
               Text(
                 offer?.supplierName ?? '',
                 maxLines: 1,
@@ -132,14 +128,32 @@ class ProductCard extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  GestureDetector(
-                    onTap: onAdd,
-                    child: const CircleAvatar(
-                      radius: 13,
-                      backgroundColor: AppColors.primary,
-                      child: Icon(Icons.add, size: 16, color: Colors.white),
+                  if (onAdd != null)
+                    BlocSelector<CartBloc, CartState, int>(
+                      selector: (state) =>
+                          offer == null ? 0 : state.quantityOf(offer!.id),
+                      builder: (context, inCart) => GestureDetector(
+                        onTap: onAdd,
+                        child: Badge(
+                          isLabelVisible: inCart > 0,
+                          label: Text('$inCart'),
+                          backgroundColor: AppColors.primaryDark,
+                          child: CircleAvatar(
+                            radius: 13,
+                            backgroundColor: inCart > 0
+                                ? AppColors.success
+                                : AppColors.primary,
+                            child: Icon(
+                              inCart > 0
+                                  ? Icons.check_rounded
+                                  : Icons.add_rounded,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ],

@@ -8,6 +8,7 @@ import 'package:outmed/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:outmed/features/auth/presentation/bloc/auth_event.dart';
 import 'package:outmed/features/auth/presentation/bloc/auth_state.dart';
 import 'package:outmed/features/auth/presentation/widgets/auth_submit_button.dart';
+import 'package:outmed/features/auth/presentation/widgets/social_login_buttons.dart';
 import 'package:outmed/shared/widgets/app_text_field.dart';
 import 'package:outmed/shared/widgets/outmed_logo.dart';
 
@@ -123,6 +124,7 @@ class _LoginPageState extends State<LoginPage> {
                   }
                 },
               ),
+              const SocialLoginButtons(),
               const SizedBox(height: 12),
               Wrap(
                 alignment: WrapAlignment.center,

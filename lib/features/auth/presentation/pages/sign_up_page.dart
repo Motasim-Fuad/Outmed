@@ -9,6 +9,7 @@ import 'package:outmed/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:outmed/features/auth/presentation/bloc/auth_event.dart';
 import 'package:outmed/features/auth/presentation/bloc/auth_state.dart';
 import 'package:outmed/features/auth/presentation/widgets/auth_submit_button.dart';
+import 'package:outmed/features/auth/presentation/widgets/social_login_buttons.dart';
 import 'package:outmed/shared/widgets/app_text_field.dart';
 import 'package:outmed/shared/widgets/outmed_logo.dart';
 
@@ -143,6 +144,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   enabled: acceptedTerms,
                   onPressed: _submit,
                 ),
+                const SocialLoginButtons(),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => AppNav.go(AppRoutes.login),

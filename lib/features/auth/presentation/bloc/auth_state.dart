@@ -26,6 +26,8 @@ class AuthState extends Equatable {
     this.signupPassword = '',
     this.locale = LocalizationConfig.fallbackLocale,
     this.revision = 0,
+    this.socialSession = false,
+    this.socialProvider = '',
   });
 
   final UserRole role;
@@ -48,6 +50,8 @@ class AuthState extends Equatable {
   final String signupPassword;
   final Locale locale;
   final int revision;
+  final bool socialSession;
+  final String socialProvider;
 
   AuthState copyWith({
     UserRole? role,
@@ -70,6 +74,8 @@ class AuthState extends Equatable {
     String? signupPassword,
     Locale? locale,
     int? revision,
+    bool? socialSession,
+    String? socialProvider,
   }) {
     return AuthState(
       role: role ?? this.role,
@@ -92,6 +98,8 @@ class AuthState extends Equatable {
       signupPassword: signupPassword ?? this.signupPassword,
       locale: locale ?? this.locale,
       revision: revision ?? this.revision,
+      socialSession: socialSession ?? this.socialSession,
+      socialProvider: socialProvider ?? this.socialProvider,
     );
   }
 
@@ -116,5 +124,7 @@ class AuthState extends Equatable {
     onboardingPayload,
     signupEmail,
     locale,
+    socialSession,
+    socialProvider,
   ];
 }

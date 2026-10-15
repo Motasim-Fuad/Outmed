@@ -4,6 +4,7 @@ import 'package:outmed/core/constants/app_colors.dart';
 import 'package:outmed/core/l10n/tr.dart';
 import 'package:outmed/core/router/route_args.dart';
 import 'package:outmed/core/status/load_status.dart';
+import 'package:outmed/features/messages/data/models/chat_lookup.dart';
 import 'package:outmed/features/messages/data/models/chat_message.dart';
 import 'package:outmed/features/messages/data/models/chat_thread.dart';
 import 'package:outmed/features/messages/presentation/bloc/chat_bloc.dart';
@@ -22,7 +23,7 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   final controller = TextEditingController();
-  late final ChatThread thread;
+  var _fallbackTitle = '';
   var _opened = false;
 
   @override
@@ -31,12 +32,19 @@ class _ChatPageState extends State<ChatPage> {
     if (_opened) return;
     _opened = true;
     final extra = RouteArgs.maybe<Object>(context);
-    thread = switch (extra) {
+    final chat = context.read<ChatBloc>();
+    if (extra is ChatLookup) {
+      _fallbackTitle = extra.senderName;
+      chat.add(ChatNotificationOpened(extra));
+      return;
+    }
+    final thread = switch (extra) {
       final ChatThread value => value,
       final String name => ChatThread(title: name),
       _ => const ChatThread(title: 'OutMed'),
     };
-    context.read<ChatBloc>().add(ChatThreadOpened(thread));
+    _fallbackTitle = thread.title;
+    chat.add(ChatThreadOpened(thread));
   }
 
   @override
@@ -56,7 +64,16 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: Text(thread.title)),
+      appBar: AppBar(
+        title: BlocSelector<ChatBloc, ChatState, String>(
+          selector: (state) {
+            final title = state.active?.title ?? '';
+            if (title.isNotEmpty) return title;
+            return _fallbackTitle.isNotEmpty ? _fallbackTitle : 'messages'.tr;
+          },
+          builder: (context, title) => Text(title),
+        ),
+      ),
       body: Column(
         children: [
           Expanded(

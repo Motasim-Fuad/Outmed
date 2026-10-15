@@ -22,10 +22,12 @@ abstract final class AppRoutes {
   static const allSuppliers = '/all-suppliers';
   static const supplierProfile = '/supplier-profile';
   static const chat = '/chat';
+  static const cart = '/cart';
   static const updateStock = '/update-stock';
   static const messages = '/messages';
   static const editProfile = '/edit-profile';
   static const security = '/security';
+  static const loginActivity = '/login-activity';
   static const notifications = '/notifications';
   static const helpSupport = '/help-support';
   static const legal = '/legal';

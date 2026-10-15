@@ -43,12 +43,18 @@ class OrderBuyAgainRequested extends OrderEvent {
 }
 
 class OrderStatusAdvanced extends OrderEvent {
-  const OrderStatusAdvanced(this.id);
+  const OrderStatusAdvanced(
+    this.id, {
+    this.trackingNumber = '',
+    this.courierName = '',
+  });
 
   final String id;
+  final String trackingNumber;
+  final String courierName;
 
   @override
-  List<Object?> get props => [id];
+  List<Object?> get props => [id, trackingNumber, courierName];
 }
 
 class OrderCancelRequested extends OrderEvent {

@@ -4,6 +4,7 @@ import 'package:outmed/core/constants/app_assets.dart';
 import 'package:outmed/core/constants/app_colors.dart';
 import 'package:outmed/core/l10n/tr.dart';
 import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/features/auth/presentation/widgets/social_login_buttons.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 import 'package:outmed/shared/widgets/outmed_logo.dart';
@@ -51,20 +52,7 @@ class AuthLandingPage extends StatelessWidget {
                 label: 'sign_up_email'.tr,
                 onTap: () => AppNav.push(AppRoutes.signUp),
               ),
-              const SizedBox(height: 10),
-              _SocialButton(
-                icon: Icons.g_mobiledata_rounded,
-                color: AppColors.primary,
-                label: 'sign_up_google'.tr,
-                onTap: () {},
-              ),
-              const SizedBox(height: 10),
-              _SocialButton(
-                icon: Icons.apple,
-                color: AppColors.ink,
-                label: 'sign_up_apple'.tr,
-                onTap: () {},
-              ),
+              const SocialLoginButtons(),
               const SizedBox(height: 18),
               Text(
                 'already_account'.tr,

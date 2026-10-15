@@ -60,9 +60,11 @@ class SupplierProductCreateRequested extends SupplierEvent {
     required this.documentName,
     this.imageBytes,
     this.categoryId = '',
+    this.sfdaCode = '',
   });
 
   final String categoryId;
+  final String sfdaCode;
 
   final String name;
   final String category;
@@ -90,6 +92,8 @@ class SupplierOfferSaveRequested extends SupplierEvent {
     required this.minimumOrder,
     required this.preparationDays,
     this.existing,
+    this.discountPrice,
+    this.unitCost,
   });
 
   final ProductModel product;
@@ -99,9 +103,18 @@ class SupplierOfferSaveRequested extends SupplierEvent {
   final int minimumOrder;
   final int preparationDays;
   final SupplierOfferModel? existing;
+  final double? discountPrice;
+  final double? unitCost;
 
   @override
-  List<Object?> get props => [product.id, price, stock, existing?.id];
+  List<Object?> get props => [
+    product.id,
+    price,
+    discountPrice,
+    unitCost,
+    stock,
+    existing?.id,
+  ];
 }
 
 class SupplierStatsRequested extends SupplierEvent {

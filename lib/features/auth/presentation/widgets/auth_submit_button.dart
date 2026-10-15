@@ -21,8 +21,10 @@ class AuthSubmitButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocSelector<AuthBloc, AuthState, (bool, String)>(
-      selector: (state) =>
-          (state.status == LoadStatus.loading, state.errorMessage),
+      selector: (state) => (
+        state.status == LoadStatus.loading && state.socialProvider.isEmpty,
+        state.errorMessage,
+      ),
       builder: (context, view) {
         final (loading, error) = view;
         return Column(

@@ -25,6 +25,7 @@ class ProductModel {
     this.slug = '',
     this.description = '',
     this.featured = false,
+    this.sfdaCode = '',
   });
 
   factory ProductModel.fromJson(Map<String, Object?> json) {
@@ -49,6 +50,7 @@ class ProductModel {
       slug: json['slug'] as String? ?? '',
       description: json['description'] as String? ?? '',
       featured: json['featured'] as bool? ?? false,
+      sfdaCode: json['sfdaCode'] as String? ?? '',
     );
   }
 
@@ -73,6 +75,7 @@ class ProductModel {
   final String slug;
   final String description;
   final bool featured;
+  final String sfdaCode;
 
   ProductModel withImageBytes(Uint8List? bytes) {
     return ProductModel(
@@ -97,6 +100,7 @@ class ProductModel {
       slug: slug,
       description: description,
       featured: featured,
+      sfdaCode: sfdaCode,
     );
   }
 
@@ -158,6 +162,7 @@ class ProductModel {
       description:
           ApiJson.text(json, const ['fullDescription', 'description']) ?? '',
       featured: json['isFeatured'] == true || json['featured'] == true,
+      sfdaCode: ApiJson.text(json, const ['sfdaCode', 'sfda_code']) ?? '',
     );
   }
 
@@ -246,6 +251,7 @@ class ProductModel {
     'slug': slug,
     'description': description,
     'featured': featured,
+    'sfdaCode': sfdaCode,
   };
 }
 
@@ -259,6 +265,8 @@ class SupplierOfferModel {
     required this.description,
     this.minimumOrder = 1,
     this.preparationDays = 2,
+    this.listPrice,
+    this.unitCost,
   });
 
   factory SupplierOfferModel.fromJson(Map<String, Object?> json) {
@@ -271,6 +279,8 @@ class SupplierOfferModel {
       description: json['description'] as String? ?? '',
       minimumOrder: json['minimumOrder'] as int? ?? 1,
       preparationDays: json['preparationDays'] as int? ?? 2,
+      listPrice: (json['listPrice'] as num?)?.toDouble(),
+      unitCost: (json['unitCost'] as num?)?.toDouble(),
     );
   }
 
@@ -279,11 +289,13 @@ class SupplierOfferModel {
     ProductModel product, {
     String fallbackSupplier = '',
   }) {
-    final price = ApiJson.number(row, const [
-      'discountPrice',
-      'sellingPrice',
-      'price',
-    ]);
+    final selling = ApiJson.number(row, const ['sellingPrice', 'price']);
+    final discount = ApiJson.number(row, const ['discountPrice']);
+    final hasDiscount =
+        discount != null &&
+        discount > 0 &&
+        (selling == null || discount < selling);
+    final price = hasDiscount ? discount : selling;
     if (price == null) return null;
     final supplier = ProductModel.supplierNameOf(row);
     return SupplierOfferModel(
@@ -299,6 +311,8 @@ class SupplierOfferModel {
           product.specifications,
       minimumOrder:
           ApiJson.integer(row, const ['minOrderQuantity', 'minimumOrder']) ?? 1,
+      listPrice: hasDiscount ? selling : null,
+      unitCost: ApiJson.number(row, const ['unitCostPrice']),
     );
   }
 
@@ -356,6 +370,12 @@ class SupplierOfferModel {
   final String description;
   final int minimumOrder;
   final int preparationDays;
+  final double? listPrice;
+  final double? unitCost;
+
+  bool get discounted => (listPrice ?? 0) > price;
+
+  double get sellingPrice => discounted ? listPrice! : price;
 
   SupplierOfferModel copyWith({
     double? price,
@@ -373,6 +393,8 @@ class SupplierOfferModel {
       description: description ?? this.description,
       minimumOrder: minimumOrder ?? this.minimumOrder,
       preparationDays: preparationDays ?? this.preparationDays,
+      listPrice: listPrice,
+      unitCost: unitCost,
     );
   }
 
@@ -385,5 +407,7 @@ class SupplierOfferModel {
     'description': description,
     'minimumOrder': minimumOrder,
     'preparationDays': preparationDays,
+    'listPrice': listPrice,
+    'unitCost': unitCost,
   };
 }

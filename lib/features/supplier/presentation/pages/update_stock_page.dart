@@ -9,6 +9,7 @@ import 'package:outmed/features/catalog/data/models/product_model.dart';
 import 'package:outmed/features/supplier/presentation/bloc/supplier_bloc.dart';
 import 'package:outmed/features/supplier/presentation/bloc/supplier_event.dart';
 import 'package:outmed/features/supplier/presentation/bloc/supplier_state.dart';
+import 'package:outmed/features/supplier/presentation/pages/widgets/stock_history_section.dart';
 import 'package:outmed/shared/widgets/app_text_field.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 import 'package:outmed/shared/widgets/glossy_card.dart';
@@ -152,6 +153,8 @@ class _UpdateStockPageState extends State<UpdateStockPage> {
                   ],
                 ),
               ),
+              const SizedBox(height: 28),
+              StockHistorySection(productId: offer.productId),
             ],
           ),
         ),

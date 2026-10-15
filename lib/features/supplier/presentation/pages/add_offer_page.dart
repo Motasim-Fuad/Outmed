@@ -44,6 +44,9 @@ class _AddOfferPageState extends State<AddOfferPage> {
   final storageController = TextEditingController();
   final documentController = TextEditingController();
   final priceController = TextEditingController();
+  final discountController = TextEditingController();
+  final unitCostController = TextEditingController();
+  final sfdaController = TextEditingController();
   final stockController = TextEditingController();
   final descriptionController = TextEditingController();
   final minimumOrderController = TextEditingController(text: '1');
@@ -65,7 +68,12 @@ class _AddOfferPageState extends State<AddOfferPage> {
       existing = offer;
       final product = supplier.productForOffer(offer);
       if (product != null) supplier.add(SupplierProductSelected(product));
-      priceController.text = offer.price.toStringAsFixed(2);
+      priceController.text = offer.sellingPrice.toStringAsFixed(2);
+      if (offer.discounted) {
+        discountController.text = offer.price.toStringAsFixed(2);
+      }
+      final cost = offer.unitCost;
+      if (cost != null) unitCostController.text = cost.toStringAsFixed(2);
       stockController.text = '${offer.stock}';
       descriptionController.text = offer.description;
       minimumOrderController.text = '${offer.minimumOrder}';
@@ -91,6 +99,9 @@ class _AddOfferPageState extends State<AddOfferPage> {
       storageController,
       documentController,
       priceController,
+      discountController,
+      unitCostController,
+      sfdaController,
       stockController,
       descriptionController,
       minimumOrderController,
@@ -129,6 +140,7 @@ class _AddOfferPageState extends State<AddOfferPage> {
         countryOfOrigin: countryController.text,
         storageRequirements: storageController.text,
         documentName: documentController.text,
+        sfdaCode: sfdaController.text,
         imageBytes: selectedImageBytes,
       ),
     );
@@ -145,6 +157,8 @@ class _AddOfferPageState extends State<AddOfferPage> {
         minimumOrder: int.parse(minimumOrderController.text.trim()),
         preparationDays: int.parse(preparationController.text.trim()),
         existing: existing,
+        discountPrice: double.tryParse(discountController.text.trim()),
+        unitCost: double.tryParse(unitCostController.text.trim()),
       ),
     );
   }
@@ -313,6 +327,11 @@ class _AddOfferPageState extends State<AddOfferPage> {
       ),
       const SizedBox(height: 12),
       AppTextField(
+        controller: sfdaController,
+        label: '${'sfda_code'.tr} (${'optional'.tr})',
+      ),
+      const SizedBox(height: 12),
+      AppTextField(
         controller: storageController,
         label: '${'storage_requirements'.tr} (${'optional'.tr})',
         maxLines: 2,
@@ -358,6 +377,35 @@ class _AddOfferPageState extends State<AddOfferPage> {
               label: 'stock'.tr,
               keyboardType: TextInputType.number,
               validator: Validators.wholeNumber(),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: AppTextField(
+              controller: discountController,
+              label: '${'discount_price'.tr} (${'optional'.tr})',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              validator: Validators.discountBelow(
+                () => priceController.text,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: AppTextField(
+              controller: unitCostController,
+              label: '${'unit_cost'.tr} (${'optional'.tr})',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              validator: Validators.optionalPrice,
             ),
           ),
         ],

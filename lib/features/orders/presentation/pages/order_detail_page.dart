@@ -11,6 +11,7 @@ import 'package:outmed/features/orders/presentation/bloc/order_event.dart';
 import 'package:outmed/features/orders/presentation/bloc/order_state.dart';
 import 'package:outmed/features/orders/presentation/order_status_label.dart';
 import 'package:outmed/features/orders/presentation/pages/widgets/order_status_step.dart';
+import 'package:outmed/features/orders/presentation/pages/widgets/shipment_info_card.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 import 'package:outmed/shared/widgets/inline_error_text.dart';
 
@@ -67,6 +68,16 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
               (state.byId(initial.id) ?? initial, state.errorMessage),
           builder: (context, data) {
             final order = data.$1;
+            if (order.isPlaceholder) {
+              return Center(
+                child: data.$2.isEmpty
+                    ? const CircularProgressIndicator()
+                    : Padding(
+                        padding: const EdgeInsets.all(22),
+                        child: InlineErrorText(message: data.$2),
+                      ),
+              );
+            }
             return ListView(
               padding: const EdgeInsets.all(22),
               children: [
@@ -165,6 +176,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                       complete: status.index <= order.status.index,
                       last: status == OrderStatus.values.last,
                     ),
+                ShipmentInfoCard(order: order),
                 const SizedBox(height: 26),
                 if (!fromSupplier)
                   CustomButton(

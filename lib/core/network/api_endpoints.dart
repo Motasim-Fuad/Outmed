@@ -7,6 +7,8 @@ abstract final class ApiEndpoints {
   static const resetPassword = '/api/v1/auth/reset-password';
   static const refresh = '/api/v1/auth/refresh-token';
   static const logout = '/api/v1/auth/logout';
+  static const social = '/api/v1/auth/social';
+  static const loginActivities = '/api/v1/auth/login-activities';
   static const changePassword = '/api/v1/auth/change-password';
   static const deleteAccount = '/api/v1/auth/delete-account';
   static const onboardingRole = '/api/v1/onboarding/role';
@@ -45,6 +47,9 @@ abstract final class ApiEndpoints {
   static String product(String slug) => '/api/v1/products/$slug';
 
   static String order(String id) => '/api/v1/orders/$id';
+
+  static String stockLogs(String id) =>
+      '/api/v1/supplier/products/$id/stock-logs';
 
   static String orderStatus(String id) => '/api/v1/orders/$id/status';
 

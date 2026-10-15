@@ -27,6 +27,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       (event, emit) => emit(state.copyWith(query: event.query)),
     );
     on<ChatThreadOpened>(_onOpened);
+    on<ChatNotificationOpened>(_onNotificationOpened);
     on<ChatMessageSent>(_onSent);
     on<ChatReset>((event, emit) => emit(const ChatState()));
   }
@@ -147,6 +148,69 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         ),
       );
     }
+  }
+
+  Future<void> _onNotificationOpened(
+    ChatNotificationOpened event,
+    Emitter<ChatState> emit,
+  ) async {
+    final lookup = event.lookup;
+    emit(
+      ChatState(
+        threads: state.threads,
+        threadsStatus: state.threadsStatus,
+        filter: state.filter,
+        query: state.query,
+        active: ChatThread(
+          id: lookup.conversationId,
+          title: lookup.senderName,
+          participantUserId: lookup.senderId,
+        ),
+        messagesStatus: LoadStatus.loading,
+      ),
+    );
+    var threads = state.threads;
+    if (AppEnv.useRemote) {
+      try {
+        threads = _threads(await _cache.get(ApiEndpoints.conversations));
+        emit(
+          state.copyWith(threads: threads, threadsStatus: LoadStatus.success),
+        );
+      } on Object catch (_) {
+        threads = state.threads.isNotEmpty
+            ? state.threads
+            : _threads(_cache.peek(ApiEndpoints.conversations));
+      }
+    } else if (threads.isEmpty) {
+      threads = _demoThreads;
+      emit(
+        state.copyWith(threads: threads, threadsStatus: LoadStatus.success),
+      );
+    }
+    final found = lookup.match(threads);
+    final ChatThread target;
+    if (found != null) {
+      target = found.title.isEmpty || found.title == 'OutMed'
+          ? found.copyWith(
+              title: lookup.senderName.isEmpty ? null : lookup.senderName,
+            )
+          : found;
+    } else if (lookup.conversationId.isNotEmpty || lookup.senderId.isNotEmpty) {
+      target = ChatThread(
+        id: lookup.conversationId,
+        title: lookup.senderName,
+        participantUserId: lookup.senderId,
+      );
+    } else {
+      emit(
+        state.copyWith(
+          messagesStatus: LoadStatus.failure,
+          errorMessage: AppLocale.translate('chat_unavailable'),
+        ),
+      );
+      return;
+    }
+    await _onOpened(ChatThreadOpened(target), emit);
   }
 
   Future<ChatThread> _startConversation(ChatThread thread) async {

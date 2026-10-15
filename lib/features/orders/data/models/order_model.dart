@@ -23,10 +23,25 @@ class OrderModel {
     this.offerId = '',
     this.number = '',
     this.cancelled = false,
+    this.trackingNumber = '',
+    this.courierName = '',
   });
+
+  factory OrderModel.placeholder(String id) => OrderModel(
+    id: id,
+    buyerName: '',
+    supplierName: '',
+    productName: '',
+    quantity: 0,
+    total: 0,
+    createdAt: DateTime.now(),
+    status: OrderStatus.pending,
+  );
 
   final String id;
   final String number;
+
+  bool get isPlaceholder => productName.isEmpty && quantity == 0;
   final String buyerName;
   final String supplierName;
   final String productName;
@@ -37,6 +52,8 @@ class OrderModel {
   final String productId;
   final String offerId;
   final bool cancelled;
+  final String trackingNumber;
+  final String courierName;
 
   String get displayId => number.isEmpty ? id : number;
 
@@ -91,6 +108,10 @@ class OrderModel {
           '',
       offerId: ApiJson.text(json, const ['offer_id', 'offerId']) ?? '',
       cancelled: rawStatus == 'CANCELLED' || rawStatus == 'REFUNDED',
+      trackingNumber:
+          ApiJson.text(json, const ['trackingNumber', 'tracking_number']) ?? '',
+      courierName:
+          ApiJson.text(json, const ['courierName', 'courier_name']) ?? '',
     );
   }
 
@@ -170,7 +191,12 @@ class OrderModel {
     };
   }
 
-  OrderModel copyWith({OrderStatus? status, bool? cancelled}) => OrderModel(
+  OrderModel copyWith({
+    OrderStatus? status,
+    bool? cancelled,
+    String? trackingNumber,
+    String? courierName,
+  }) => OrderModel(
     id: id,
     number: number,
     buyerName: buyerName,
@@ -183,5 +209,7 @@ class OrderModel {
     productId: productId,
     offerId: offerId,
     cancelled: cancelled ?? this.cancelled,
+    trackingNumber: trackingNumber ?? this.trackingNumber,
+    courierName: courierName ?? this.courierName,
   );
 }

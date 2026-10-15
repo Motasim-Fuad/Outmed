@@ -7,6 +7,7 @@ import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/core/router/route_args.dart';
 import 'package:outmed/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:outmed/features/cart/presentation/bloc/cart_event.dart';
+import 'package:outmed/features/cart/presentation/widgets/cart_added_notice.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_event.dart';
@@ -18,6 +19,7 @@ import 'package:outmed/features/messages/data/models/chat_thread.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 import 'package:outmed/shared/widgets/inline_error_text.dart';
+import 'package:outmed/shared/widgets/price_tag.dart';
 
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({super.key});
@@ -167,13 +169,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               ],
                             ),
                             const SizedBox(height: 12),
-                            Text(
-                              '${'sar'.tr} ${offer.price.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                color: AppColors.ink,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                              ),
+                            PriceTag(
+                              offer: offer,
+                              fontSize: 20,
+                              color: AppColors.ink,
                             ),
                             Text(
                               'price_includes_vat'.tr,
@@ -297,6 +296,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 details.manufacturer,
                                 details.reference,
                                 details.packSize,
+                                if (details.sfdaCode.isNotEmpty)
+                                  'SFDA ${details.sfdaCode}',
                               ].where((part) => part.isNotEmpty).join(' · '),
                             ].join('\n\n'),
                             style: const TextStyle(
@@ -353,6 +354,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 ? null
                                 : () => _addToCart(offer),
                           ),
+                          if (offer != null) CartAddedNotice(offerId: offer.id),
                           InlineErrorText(message: _error),
                         ],
                       ),

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/core/l10n/tr.dart';
 import 'package:outmed/features/buyer/presentation/pages/widgets/buyer_categories_tab.dart';
 import 'package:outmed/features/buyer/presentation/pages/widgets/buyer_home.dart';
+import 'package:outmed/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:outmed/features/cart/presentation/bloc/cart_state.dart';
 import 'package:outmed/features/cart/presentation/pages/cart_page.dart';
 import 'package:outmed/features/messages/presentation/pages/messages_page.dart';
 import 'package:outmed/features/profile/presentation/pages/profile_page.dart';
@@ -29,37 +32,42 @@ class _BuyerMainPageState extends State<BuyerMainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: _pages),
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: currentIndex,
-        onDestinationSelected: (index) => setState(() => currentIndex = index),
-        destinations: [
-          NavDestination(
-            icon: Icons.home_outlined,
-            activeIcon: Icons.home_rounded,
-            label: 'home'.tr,
-          ),
-          NavDestination(
-            icon: Icons.grid_view_outlined,
-            activeIcon: Icons.grid_view_rounded,
-            label: 'categories'.tr,
-          ),
-          NavDestination(
-            icon: Icons.shopping_cart_outlined,
-            activeIcon: Icons.shopping_cart_rounded,
-            label: 'cart'.tr,
-            isCenter: true,
-          ),
-          NavDestination(
-            icon: Icons.chat_bubble_outline_rounded,
-            activeIcon: Icons.chat_bubble_rounded,
-            label: 'messages'.tr,
-          ),
-          NavDestination(
-            icon: Icons.person_outline_rounded,
-            activeIcon: Icons.person_rounded,
-            label: 'profile'.tr,
-          ),
-        ],
+      bottomNavigationBar: BlocSelector<CartBloc, CartState, int>(
+        selector: (state) => state.itemCount,
+        builder: (context, cartCount) => CustomBottomNav(
+          currentIndex: currentIndex,
+          onDestinationSelected: (index) =>
+              setState(() => currentIndex = index),
+          destinations: [
+            NavDestination(
+              icon: Icons.home_outlined,
+              activeIcon: Icons.home_rounded,
+              label: 'home'.tr,
+            ),
+            NavDestination(
+              icon: Icons.grid_view_outlined,
+              activeIcon: Icons.grid_view_rounded,
+              label: 'categories'.tr,
+            ),
+            NavDestination(
+              icon: Icons.shopping_cart_outlined,
+              activeIcon: Icons.shopping_cart_rounded,
+              label: 'cart'.tr,
+              isCenter: true,
+              badge: cartCount,
+            ),
+            NavDestination(
+              icon: Icons.chat_bubble_outline_rounded,
+              activeIcon: Icons.chat_bubble_rounded,
+              label: 'messages'.tr,
+            ),
+            NavDestination(
+              icon: Icons.person_outline_rounded,
+              activeIcon: Icons.person_rounded,
+              label: 'profile'.tr,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:outmed/core/auth/social_auth_service.dart';
 import 'package:outmed/core/config/app_env.dart';
 import 'package:outmed/core/l10n/app_locale.dart';
 import 'package:outmed/core/logger/app_logger.dart';
@@ -18,8 +19,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.tokens,
     required this._dio,
     this.cache,
+    SocialAuthService? social,
     bool authenticated = false,
-  }) : super(AuthState(authenticated: authenticated)) {
+  }) : _social = social ?? SocialAuthService(),
+       super(AuthState(authenticated: authenticated)) {
     on<AuthFeedbackCleared>(_onFeedbackCleared);
     on<AuthChangePasswordRequested>(_onChangePassword);
     on<AuthDeleteAccountRequested>(_onDeleteAccount);
@@ -28,6 +31,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthPasswordVisibilityToggled>(_onPassword);
     on<AuthTermsChanged>(_onTerms);
     on<AuthLoginRequested>(_onLogin);
+    on<AuthSocialRequested>(_onSocial);
     on<AuthSignUpRequested>(_onSignUp);
     on<AuthVerifyOtpRequested>(_onVerifyOtp);
     on<AuthResendOtpRequested>(_onResendOtp);
@@ -44,6 +48,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final TokenStore tokens;
   final Dio _dio;
   final RemoteCache? cache;
+  final SocialAuthService _social;
 
   void _onFeedbackCleared(AuthFeedbackCleared event, Emitter<AuthState> emit) {
     emit(
@@ -261,6 +266,99 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         revision: state.revision + 1,
       ),
     );
+  }
+
+  Future<void> _onSocial(
+    AuthSocialRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    AppLogger.log('AuthBloc: SocialRequested ${event.provider}');
+    emit(
+      state.copyWith(
+        status: LoadStatus.loading,
+        socialProvider: event.provider,
+        errorMessage: '',
+        revision: state.revision + 1,
+      ),
+    );
+    try {
+      final credential = event.provider == 'apple'
+          ? await _social.apple()
+          : await _social.google();
+      if (credential == null) {
+        emit(
+          state.copyWith(
+            status: LoadStatus.initial,
+            socialProvider: '',
+            revision: state.revision + 1,
+          ),
+        );
+        return;
+      }
+      final response = await _dio.post<dynamic>(
+        ApiEndpoints.social,
+        data: {
+          'provider': credential.provider,
+          'token': credential.token,
+          if (credential.fullName.isNotEmpty) 'fullName': credential.fullName,
+          if (credential.avatarUrl.isNotEmpty)
+            'avatarUrl': credential.avatarUrl,
+        },
+      );
+      final access = ApiJson.accessToken(response.data);
+      if (access == null) throw StateError('request_failed');
+      await tokens.save(
+        access: access,
+        refresh: ApiJson.refreshToken(response.data),
+      );
+      final user = ApiJson.asMap(
+        ApiJson.asMap(ApiJson.unwrap(response.data))?['user'],
+      );
+      final role = _readRole(user) ?? await _profileRole();
+      final step = user == null
+          ? null
+          : ApiJson.text(user, const ['onboardingStep'])?.toUpperCase();
+      final onboarded = role != null && (step == null || step == 'COMPLETED');
+      if (!onboarded) {
+        emit(
+          state.copyWith(
+            status: LoadStatus.success,
+            role: role ?? state.role,
+            socialSession: true,
+            socialProvider: '',
+            pendingOnboarding: true,
+            authenticated: false,
+            revision: state.revision + 1,
+          ),
+        );
+        return;
+      }
+      await tokens.saveRole(role.name);
+      emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          role: role,
+          authenticated: true,
+          socialSession: false,
+          socialProvider: '',
+          pendingOnboarding: false,
+          errorMessage: '',
+          revision: state.revision + 1,
+        ),
+      );
+    } on Object catch (error) {
+      tokens.clear();
+      emit(
+        state.copyWith(
+          status: LoadStatus.failure,
+          socialProvider: '',
+          errorMessage: error is DioException
+              ? _message(error)
+              : AppLocale.translate('social_login_failed'),
+          revision: state.revision + 1,
+        ),
+      );
+    }
   }
 
   Future<void> _onSignUp(
@@ -544,6 +642,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
       await _postRole();
       await _submitOnboarding(event.payload);
+      final social = state.socialSession;
+      if (social) await tokens.saveRole(state.role.name);
       emit(
         state.copyWith(
           status: LoadStatus.success,
@@ -551,7 +651,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           pendingOnboarding: false,
           onboardingPayload: const {},
           signupPassword: '',
-          authenticated: false,
+          socialSession: false,
+          authenticated: social,
           errorMessage: '',
           revision: state.revision + 1,
         ),

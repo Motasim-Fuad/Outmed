@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:outmed/core/constants/app_colors.dart';
 import 'package:outmed/core/l10n/tr.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
+import 'package:outmed/shared/widgets/price_tag.dart';
 
 class OfferTile extends StatelessWidget {
   const OfferTile({
@@ -55,13 +56,7 @@ class OfferTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Text(
-                '${'sar'.tr} ${offer.price.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              PriceTag(offer: offer, fontSize: 14),
               IconButton(
                 onPressed: onOpenSupplier,
                 icon: const Icon(

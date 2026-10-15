@@ -166,6 +166,14 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
       );
     } on Object catch (error) {
       AppLogger.log('OrderBloc: detail failed $error');
+      if (state.byId(event.id) == null) {
+        emit(
+          state.copyWith(
+            errorMessage: ApiError.message(error),
+            revision: state.revision + 1,
+          ),
+        );
+      }
     }
   }
 
@@ -343,11 +351,21 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     final nextStatus = AppEnv.useRemote
         ? OrderModel.nextRemoteStatus(current.status)
         : OrderStatus.values[current.status.index + 1];
+    final tracking = event.trackingNumber.trim();
+    final courier = event.courierName.trim();
     await _update(
       emit,
       current,
-      {'status': OrderModel.statusWireName(nextStatus)},
-      current.copyWith(status: nextStatus),
+      {
+        'status': OrderModel.statusWireName(nextStatus),
+        if (tracking.isNotEmpty) 'trackingNumber': tracking,
+        if (courier.isNotEmpty) 'courierName': courier,
+      },
+      current.copyWith(
+        status: nextStatus,
+        trackingNumber: tracking.isEmpty ? null : tracking,
+        courierName: courier.isEmpty ? null : courier,
+      ),
     );
   }
 

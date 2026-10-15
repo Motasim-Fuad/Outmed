@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:outmed/features/messages/data/models/chat_lookup.dart';
 import 'package:outmed/features/messages/data/models/chat_thread.dart';
 
 sealed class ChatEvent extends Equatable {
@@ -37,6 +38,15 @@ class ChatThreadOpened extends ChatEvent {
 
   @override
   List<Object?> get props => [thread];
+}
+
+class ChatNotificationOpened extends ChatEvent {
+  const ChatNotificationOpened(this.lookup);
+
+  final ChatLookup lookup;
+
+  @override
+  List<Object?> get props => [lookup];
 }
 
 class ChatMessageSent extends ChatEvent {

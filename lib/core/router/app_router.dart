@@ -17,6 +17,7 @@ import 'package:outmed/features/auth/presentation/pages/sign_up_page.dart';
 import 'package:outmed/features/auth/presentation/pages/verified_page.dart';
 import 'package:outmed/features/auth/presentation/pages/verify_email_page.dart';
 import 'package:outmed/features/buyer/presentation/pages/buyer_main_page.dart';
+import 'package:outmed/features/cart/presentation/pages/cart_page.dart';
 import 'package:outmed/features/catalog/presentation/pages/all_products_page.dart';
 import 'package:outmed/features/catalog/presentation/pages/all_suppliers_page.dart';
 import 'package:outmed/features/catalog/presentation/pages/product_detail_page.dart';
@@ -28,6 +29,7 @@ import 'package:outmed/features/onboarding/presentation/pages/onboarding_page.da
 import 'package:outmed/features/orders/presentation/pages/buyer_orders_page.dart';
 import 'package:outmed/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:outmed/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:outmed/features/profile/presentation/pages/login_activity_page.dart';
 import 'package:outmed/features/profile/presentation/pages/security_page.dart';
 import 'package:outmed/features/supplier/presentation/pages/add_offer_page.dart';
 import 'package:outmed/features/supplier/presentation/pages/supplier_inventory_page.dart';
@@ -86,6 +88,7 @@ class AppRouter {
         _route(AppRoutes.allSuppliers, const AllSuppliersPage()),
         _route(AppRoutes.supplierProfile, const SupplierProfilePage()),
         _route(AppRoutes.chat, const ChatPage()),
+        _route(AppRoutes.cart, const CartPage(showAppBar: true)),
         _route(AppRoutes.updateStock, const UpdateStockPage()),
         _route(AppRoutes.buyerOrders, const BuyerOrdersPage()),
         _route(AppRoutes.orderDetail, const OrderDetailPage()),
@@ -109,6 +112,7 @@ class AppRouter {
           ),
         ),
         _route(AppRoutes.security, const SecurityPage()),
+        _route(AppRoutes.loginActivity, const LoginActivityPage()),
         _route(AppRoutes.notifications, const NotificationsPage()),
         _route(AppRoutes.helpSupport, const HelpSupportPage()),
         GoRoute(

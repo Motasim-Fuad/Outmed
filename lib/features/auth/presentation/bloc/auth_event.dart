@@ -45,6 +45,15 @@ class AuthLoginRequested extends AuthEvent {
   List<Object?> get props => [email, password];
 }
 
+class AuthSocialRequested extends AuthEvent {
+  const AuthSocialRequested(this.provider);
+
+  final String provider;
+
+  @override
+  List<Object?> get props => [provider];
+}
+
 class AuthRegisterRequested extends AuthEvent {
   const AuthRegisterRequested(this.payload);
 

@@ -56,6 +56,14 @@ class BuyerHome extends StatelessWidget {
                     onChanged: (value) => context.read<CatalogBloc>().add(
                       CatalogSearchChanged(value),
                     ),
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (value) {
+                      if (value.trim().isEmpty) return;
+                      AppNav.push(
+                        AppRoutes.allProducts,
+                        extra: (query: value.trim()),
+                      );
+                    },
                     decoration: InputDecoration(
                       hintText: 'search_placeholder'.tr,
                       prefixIcon: const Icon(Icons.search_rounded),

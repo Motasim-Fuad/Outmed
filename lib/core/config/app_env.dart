@@ -12,6 +12,15 @@ abstract final class AppEnv {
     'STRIPE_PUBLISHABLE_KEY',
   );
   static const firebaseEnabled = bool.fromEnvironment('FIREBASE_ENABLED');
+  static const googleServerClientId = String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+  );
+  static const googleIosClientId = String.fromEnvironment(
+    'GOOGLE_IOS_CLIENT_ID',
+  );
+  static const appleSignInEnabled = bool.fromEnvironment(
+    'APPLE_SIGN_IN_ENABLED',
+  );
 
   static bool get isMock => name == 'mock';
 

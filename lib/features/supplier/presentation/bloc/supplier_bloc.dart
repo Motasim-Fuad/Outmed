@@ -179,6 +179,7 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
           countryOfOrigin: event.countryOfOrigin.trim(),
           storageRequirements: event.storageRequirements.trim(),
           documentName: event.documentName.trim(),
+          sfdaCode: event.sfdaCode.trim(),
         ),
       );
       emit(
@@ -211,11 +212,13 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
           'offer-${DateTime.now().microsecondsSinceEpoch}',
       productId: event.product.id,
       supplierName: supplierName,
-      price: event.price,
+      price: event.discountPrice ?? event.price,
       stock: event.stock,
       description: event.description.trim(),
       minimumOrder: event.minimumOrder,
       preparationDays: event.preparationDays,
+      listPrice: event.discountPrice == null ? null : event.price,
+      unitCost: event.unitCost,
     );
     if (AppEnv.useRemote) {
       emit(
@@ -251,7 +254,7 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
           }
         } else {
           await _remote.updateProduct(offer.id, {
-            'sellingPrice': offer.price,
+            ..._priceBody(offer, clearDiscount: event.existing!.discounted),
             'stockQuantity': offer.stock,
             'minOrderQuantity': offer.minimumOrder,
             if (offer.description.isNotEmpty)
@@ -333,6 +336,21 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
     _emitOffers(emit);
   }
 
+  Map<String, Object?> _priceBody(
+    SupplierOfferModel offer, {
+    bool clearDiscount = false,
+  }) {
+    final unitCost = offer.unitCost;
+    return {
+      'sellingPrice': offer.sellingPrice,
+      if (offer.discounted)
+        'discountPrice': offer.price
+      else if (clearDiscount)
+        'discountPrice': null,
+      'unitCostPrice': ?unitCost,
+    };
+  }
+
   Map<String, Object?> _productBody(
     ProductModel product,
     SupplierOfferModel offer,
@@ -348,7 +366,8 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
       'countryOfOrigin': orDash(product.countryOfOrigin),
       'shortDescription': orDash(product.specifications),
       if (offer.description.isNotEmpty) 'fullDescription': offer.description,
-      'sellingPrice': offer.price,
+      if (product.sfdaCode.isNotEmpty) 'sfdaCode': product.sfdaCode,
+      ..._priceBody(offer),
       'stockQuantity': offer.stock,
       'minOrderQuantity': offer.minimumOrder,
       'status': 'ACTIVE',

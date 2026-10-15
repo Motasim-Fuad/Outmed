@@ -45,6 +45,24 @@ abstract final class Validators {
     return number == null || number <= 0 ? 'invalid_number'.tr : null;
   }
 
+  static String? optionalPrice(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    return price(value);
+  }
+
+  static String? Function(String?) discountBelow(String Function() price) {
+    return (value) {
+      if (value == null || value.trim().isEmpty) return null;
+      final discount = double.tryParse(value.trim());
+      final selling = double.tryParse(price().trim());
+      if (discount == null || discount <= 0) return 'invalid_number'.tr;
+      if (selling != null && discount >= selling) {
+        return 'discount_below_price'.tr;
+      }
+      return null;
+    };
+  }
+
   static String? Function(String?) wholeNumber({int min = 0}) {
     return (value) {
       final number = int.tryParse(value?.trim() ?? '');

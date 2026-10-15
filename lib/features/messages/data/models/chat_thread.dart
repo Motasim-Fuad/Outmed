@@ -109,13 +109,14 @@ class ChatThread extends Equatable {
 
   ChatThread copyWith({
     String? id,
+    String? title,
     String? preview,
     DateTime? updatedAt,
     int? unread,
   }) {
     return ChatThread(
       id: id ?? this.id,
-      title: title,
+      title: title ?? this.title,
       preview: preview ?? this.preview,
       updatedAt: updatedAt ?? this.updatedAt,
       unread: unread ?? this.unread,

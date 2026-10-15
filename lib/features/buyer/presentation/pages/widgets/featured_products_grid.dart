@@ -50,10 +50,14 @@ class FeaturedProductsGrid extends StatelessWidget {
               product: product,
               offer: offer,
               onTap: () => AppNav.push(AppRoutes.productDetail, extra: product),
-              onAdd: offer == null
+              onAdd: offer == null || offer.stock <= 0
                   ? null
                   : () => context.read<CartBloc>().add(
-                      CartItemAdded(product: product, offer: offer),
+                      CartItemAdded(
+                        product: product,
+                        offer: offer,
+                        quantity: offer.minimumOrder,
+                      ),
                     ),
             );
           },

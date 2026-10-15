@@ -13,6 +13,13 @@ class CartState extends Equatable {
   double get total => subtotal + vat + deliveryFee;
   int get itemCount => items.fold(0, (sum, item) => sum + item.quantity);
 
+  int quantityOf(String offerId) {
+    for (final item in items) {
+      if (item.offer.id == offerId) return item.quantity;
+    }
+    return 0;
+  }
+
   CartState copyWith({List<CartItem>? items, int? revision}) {
     return CartState(
       items: items ?? this.items,

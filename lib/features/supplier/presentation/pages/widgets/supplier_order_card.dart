@@ -10,6 +10,7 @@ import 'package:outmed/features/orders/data/models/order_model.dart';
 import 'package:outmed/features/orders/presentation/bloc/order_bloc.dart';
 import 'package:outmed/features/orders/presentation/bloc/order_event.dart';
 import 'package:outmed/features/orders/presentation/order_status_label.dart';
+import 'package:outmed/features/supplier/presentation/pages/widgets/shipping_details_dialog.dart';
 import 'package:outmed/features/supplier/presentation/pages/widgets/supplier_status_badge.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 import 'package:outmed/shared/widgets/glossy_card.dart';
@@ -46,6 +47,26 @@ class SupplierOrderCard extends StatelessWidget {
     if (confirmed == true && context.mounted) {
       context.read<OrderBloc>().add(OrderCancelRequested(order.id));
     }
+  }
+
+  Future<void> _advance(BuildContext context) async {
+    final orders = context.read<OrderBloc>();
+    if (order.supplierNextStatus != OrderStatus.inTransit) {
+      orders.add(OrderStatusAdvanced(order.id));
+      return;
+    }
+    final details = await showDialog<(String, String)>(
+      context: context,
+      builder: (_) => const ShippingDetailsDialog(),
+    );
+    if (details == null) return;
+    orders.add(
+      OrderStatusAdvanced(
+        order.id,
+        courierName: details.$1,
+        trackingNumber: details.$2,
+      ),
+    );
   }
 
   @override
@@ -112,9 +133,7 @@ class SupplierOrderCard extends StatelessWidget {
                     child: CustomButton(
                       label: order.supplierNextAction,
                       isLoading: updating,
-                      onPressed: () => context.read<OrderBloc>().add(
-                        OrderStatusAdvanced(order.id),
-                      ),
+                      onPressed: () => unawaited(_advance(context)),
                     ),
                   ),
                 ],

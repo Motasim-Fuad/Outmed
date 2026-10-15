@@ -19,6 +19,14 @@ extension DateLabel on DateTime? {
     return DateFormat.MMMd(locale).format(value);
   }
 
+  String get dateTimeLabel {
+    final value = this?.toLocal();
+    if (value == null) return '';
+    final locale = AppLocale.instance.locale.languageCode;
+    return '${DateFormat.yMMMd(locale).format(value)} · '
+        '${DateFormat.Hm(locale).format(value)}';
+  }
+
   String get mediumLabel {
     final value = this?.toLocal();
     if (value == null) return '';

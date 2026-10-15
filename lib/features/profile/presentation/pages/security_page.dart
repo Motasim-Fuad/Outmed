@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
 import 'package:outmed/core/l10n/tr.dart';
+import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/core/validation/validators.dart';
 import 'package:outmed/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:outmed/features/auth/presentation/bloc/auth_event.dart';
@@ -113,7 +115,22 @@ class _SecurityPageState extends State<SecurityPage> {
               ),
               const SizedBox(height: 18),
               AuthSubmitButton(label: 'update_password'.tr, onPressed: _submit),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+              const Divider(),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.devices_rounded,
+                  color: AppColors.primary,
+                ),
+                title: Text(
+                  'login_activity'.tr,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text('login_activity_hint'.tr),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => AppNav.push(AppRoutes.loginActivity),
+              ),
               const Divider(),
               const SizedBox(height: 12),
               Text(

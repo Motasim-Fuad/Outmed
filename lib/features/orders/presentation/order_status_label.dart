@@ -5,14 +5,15 @@ import 'package:outmed/features/orders/data/models/order_model.dart';
 extension OrderStatusLabel on OrderModel {
   bool get supplierCanAdvance => !cancelled && status != OrderStatus.delivered;
 
+  OrderStatus get supplierNextStatus => AppEnv.useRemote
+      ? OrderModel.nextRemoteStatus(status)
+      : OrderStatus.values[(status.index + 1).clamp(
+          0,
+          OrderStatus.values.length - 1,
+        )];
+
   String get supplierNextAction {
-    final next = AppEnv.useRemote
-        ? OrderModel.nextRemoteStatus(status)
-        : OrderStatus.values[(status.index + 1).clamp(
-            0,
-            OrderStatus.values.length - 1,
-          )];
-    return switch (next) {
+    return switch (supplierNextStatus) {
       OrderStatus.pending || OrderStatus.confirmed => 'confirm_order'.tr,
       OrderStatus.preparing => 'mark_preparing'.tr,
       OrderStatus.readyForPickup => 'mark_ready'.tr,

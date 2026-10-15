@@ -6,6 +6,8 @@ import 'package:outmed/core/l10n/tr.dart';
 import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/core/router/route_args.dart';
 import 'package:outmed/core/status/load_status.dart';
+import 'package:outmed/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:outmed/features/cart/presentation/bloc/cart_event.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_event.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_state.dart';
@@ -37,6 +39,7 @@ class _AllProductsPageState extends State<AllProductsPage> {
     final extra = RouteArgs.maybe<Object>(context);
     if (extra is CategoryOption) category = extra;
     if (extra is String) category = CategoryOption(id: extra, name: extra);
+    if (extra is ({String query})) searchController.text = extra.query;
   }
 
   @override
@@ -165,13 +168,23 @@ class _AllProductsPageState extends State<AllProductsPage> {
                           ),
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final product = products[index];
+                        final offer = catalog.bestOfferFor(product.id);
                         return ProductCard(
                           product: product,
-                          offer: catalog.bestOfferFor(product.id),
+                          offer: offer,
                           onTap: () => AppNav.push(
                             AppRoutes.productDetail,
                             extra: product,
                           ),
+                          onAdd: offer == null || offer.stock <= 0
+                              ? null
+                              : () => context.read<CartBloc>().add(
+                                  CartItemAdded(
+                                    product: product,
+                                    offer: offer,
+                                    quantity: offer.minimumOrder,
+                                  ),
+                                ),
                         );
                       }, childCount: products.length),
                     ),
