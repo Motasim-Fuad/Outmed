@@ -5,6 +5,8 @@ import 'package:outmed/core/network/offline_queue.dart';
 import 'package:outmed/features/auth/domain/user_role.dart';
 import 'package:outmed/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:outmed/features/cart/presentation/bloc/cart_event.dart';
+import 'package:outmed/features/catalog/presentation/bloc/category_bloc.dart';
+import 'package:outmed/features/catalog/presentation/bloc/category_event.dart';
 import 'package:outmed/features/catalog/presentation/bloc/supplier_directory_bloc.dart';
 import 'package:outmed/features/catalog/presentation/bloc/supplier_directory_event.dart';
 import 'package:outmed/features/messages/presentation/bloc/chat_bloc.dart';
@@ -25,6 +27,7 @@ abstract final class SessionSync {
     getIt<ProfileBloc>().add(const ProfileStarted());
     getIt<NotificationBloc>().add(const NotificationsStarted());
     getIt<ChatBloc>().add(const ChatStarted());
+    getIt<CategoryBloc>().add(const CategoryStarted());
     if (role == UserRole.supplier) {
       getIt<SupplierBloc>().add(const SupplierStatsRequested());
     } else {

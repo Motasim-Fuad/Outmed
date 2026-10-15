@@ -42,15 +42,9 @@ class SupplierRemote {
   }
 
   Future<List<CategoryOption>> categories() async {
-    final body = await _cache.get(ApiEndpoints.categories);
-    return ApiJson.maps(
-          body,
-        )
-        .map(CategoryOption.tryParse)
-        .whereType<CategoryOption>()
-        .toList(
-          growable: false,
-        );
+    return CategoryOption.parseList(
+      await _cache.get(ApiEndpoints.categories),
+    );
   }
 
   Future<Map<String, Object?>?> createProduct(Map<String, Object?> body) async {

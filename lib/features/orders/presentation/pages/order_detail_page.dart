@@ -24,10 +24,23 @@ class OrderDetailPage extends StatefulWidget {
 }
 
 class _OrderDetailPageState extends State<OrderDetailPage> {
+  bool _requested = false;
+
   @override
   void initState() {
     super.initState();
     context.read<OrderBloc>().add(const OrderFeedbackCleared());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_requested) return;
+    _requested = true;
+    final initial = RouteArgs.maybe<Object>(context);
+    if (initial is OrderModel) {
+      context.read<OrderBloc>().add(OrderDetailRequested(initial.id));
+    }
   }
 
   String _stepLabel(OrderStatus status) {

@@ -19,7 +19,7 @@ class FeaturedProductsGrid extends StatelessWidget {
       selector: (state) => (state.revision, state),
       builder: (context, data) {
         final catalog = data.$2;
-        final products = catalog.visibleProducts.take(4).toList();
+        final products = catalog.featured.take(4).toList();
         if (products.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),

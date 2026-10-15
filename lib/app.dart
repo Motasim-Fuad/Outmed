@@ -14,6 +14,7 @@ import 'package:outmed/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:outmed/features/auth/presentation/bloc/auth_state.dart';
 import 'package:outmed/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
+import 'package:outmed/features/catalog/presentation/bloc/category_bloc.dart';
 import 'package:outmed/features/catalog/presentation/bloc/supplier_directory_bloc.dart';
 import 'package:outmed/features/messages/presentation/bloc/chat_bloc.dart';
 import 'package:outmed/features/notifications/presentation/bloc/notification_bloc.dart';
@@ -50,6 +51,7 @@ class OutMedApp extends StatelessWidget {
         BlocProvider.value(value: getIt<CartBloc>()),
         BlocProvider.value(value: getIt<OrderBloc>()),
         BlocProvider.value(value: getIt<SupplierBloc>()),
+        BlocProvider.value(value: getIt<CategoryBloc>()),
         BlocProvider.value(value: getIt<SupplierDirectoryBloc>()),
         BlocProvider.value(value: getIt<ChatBloc>()),
         BlocProvider.value(value: getIt<ProfileBloc>()),

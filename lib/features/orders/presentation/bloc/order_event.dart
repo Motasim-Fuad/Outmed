@@ -13,6 +13,15 @@ class OrderStarted extends OrderEvent {
   const OrderStarted();
 }
 
+class OrderDetailRequested extends OrderEvent {
+  const OrderDetailRequested(this.id);
+
+  final String id;
+
+  @override
+  List<Object?> get props => [id];
+}
+
 class OrderPlaceRequested extends OrderEvent {
   const OrderPlaceRequested(this.cart, {this.phone = '', this.notes = ''});
 

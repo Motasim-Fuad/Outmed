@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:outmed/core/constants/app_assets.dart';
 import 'package:outmed/core/network/api_json.dart';
 
 class ProductModel {
@@ -23,6 +22,9 @@ class ProductModel {
     this.supplierId = '',
     this.supplierUserId = '',
     this.categoryId = '',
+    this.slug = '',
+    this.description = '',
+    this.featured = false,
   });
 
   factory ProductModel.fromJson(Map<String, Object?> json) {
@@ -44,6 +46,9 @@ class ProductModel {
       supplierId: json['supplierId'] as String? ?? '',
       supplierUserId: json['supplierUserId'] as String? ?? '',
       categoryId: json['categoryId'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      featured: json['featured'] as bool? ?? false,
     );
   }
 
@@ -65,6 +70,35 @@ class ProductModel {
   final String supplierId;
   final String supplierUserId;
   final String categoryId;
+  final String slug;
+  final String description;
+  final bool featured;
+
+  ProductModel withImageBytes(Uint8List? bytes) {
+    return ProductModel(
+      id: id,
+      name: name,
+      category: category,
+      manufacturer: manufacturer,
+      reference: reference,
+      packSize: packSize,
+      imageAsset: imageAsset,
+      imageBytes: bytes,
+      brand: brand,
+      specifications: specifications,
+      barcode: barcode,
+      countryOfOrigin: countryOfOrigin,
+      storageRequirements: storageRequirements,
+      documentName: documentName,
+      addedOn: addedOn,
+      supplierId: supplierId,
+      supplierUserId: supplierUserId,
+      categoryId: categoryId,
+      slug: slug,
+      description: description,
+      featured: featured,
+    );
+  }
 
   String get searchableText =>
       '$name $category $brand $manufacturer $reference $barcode'.toLowerCase();
@@ -120,6 +154,10 @@ class ProductModel {
             const ['id'],
           ) ??
           '',
+      slug: ApiJson.text(json, const ['slug']) ?? '',
+      description:
+          ApiJson.text(json, const ['fullDescription', 'description']) ?? '',
+      featured: json['isFeatured'] == true || json['featured'] == true,
     );
   }
 
@@ -168,7 +206,7 @@ class ProductModel {
         if (url != null) return url;
       }
     }
-    return AppAssets.diagnosticKit;
+    return '';
   }
 
   Map<String, Object?> toApi() => {
@@ -205,6 +243,9 @@ class ProductModel {
     'supplierId': supplierId,
     'supplierUserId': supplierUserId,
     'categoryId': categoryId,
+    'slug': slug,
+    'description': description,
+    'featured': featured,
   };
 }
 

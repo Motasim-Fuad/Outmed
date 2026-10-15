@@ -15,6 +15,7 @@ abstract final class ApiEndpoints {
   static const supplierOnboardingStep2 = '/api/v1/onboarding/supplier/step2';
   static const supplierOnboardingStep3 = '/api/v1/onboarding/supplier/step3';
   static const products = '/api/v1/products';
+  static const featuredProducts = '/api/v1/products/featured';
   static const categories = '/api/v1/categories/all';
   static const supplierProducts = '/api/v1/supplier/products';
   static const cartItems = '/api/v1/cart/items';
@@ -40,6 +41,10 @@ abstract final class ApiEndpoints {
 
   static String supplierStock(String id) =>
       '/api/v1/supplier/products/$id/stock';
+
+  static String product(String slug) => '/api/v1/products/$slug';
+
+  static String order(String id) => '/api/v1/orders/$id';
 
   static String orderStatus(String id) => '/api/v1/orders/$id/status';
 

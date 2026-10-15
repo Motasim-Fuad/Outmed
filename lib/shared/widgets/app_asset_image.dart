@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:outmed/core/constants/app_colors.dart';
 
 class AppAssetImage extends StatelessWidget {
   const AppAssetImage(
@@ -29,6 +30,21 @@ class AppAssetImage extends StatelessWidget {
         height: height,
         fit: fit,
         filterQuality: FilterQuality.high,
+      );
+    }
+    if (asset.isEmpty) {
+      return SizedBox(
+        width: width,
+        height: height,
+        child: const FittedBox(
+          child: Padding(
+            padding: EdgeInsets.all(8),
+            child: Icon(
+              Icons.medical_services_outlined,
+              color: AppColors.muted,
+            ),
+          ),
+        ),
       );
     }
     if (asset.startsWith('http')) {

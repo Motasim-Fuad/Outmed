@@ -14,6 +14,8 @@ import 'package:outmed/features/buyer/presentation/pages/widgets/top_suppliers_s
 import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_event.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_state.dart';
+import 'package:outmed/features/catalog/presentation/bloc/category_bloc.dart';
+import 'package:outmed/features/catalog/presentation/bloc/category_event.dart';
 import 'package:outmed/features/catalog/presentation/bloc/supplier_directory_bloc.dart';
 import 'package:outmed/features/catalog/presentation/bloc/supplier_directory_event.dart';
 import 'package:outmed/features/notifications/presentation/bloc/notification_bloc.dart';
@@ -25,6 +27,7 @@ class BuyerHome extends StatelessWidget {
 
   Future<void> _refresh(BuildContext context) async {
     final catalog = context.read<CatalogBloc>();
+    context.read<CategoryBloc>().add(const CategoryStarted());
     context.read<SupplierDirectoryBloc>().add(const SupplierDirectoryStarted());
     context.read<NotificationBloc>().add(const NotificationsStarted());
     catalog.add(const CatalogRefreshRequested());

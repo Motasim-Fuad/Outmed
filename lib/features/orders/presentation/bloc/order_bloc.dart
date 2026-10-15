@@ -29,6 +29,7 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
     this._profile,
   ) : super(OrderState(orders: AppEnv.useRemote ? const [] : _seed)) {
     on<OrderStarted>(_start);
+    on<OrderDetailRequested>(_detail);
     on<OrderPlaceRequested>(_place);
     on<OrderBuyAgainRequested>(_buyAgain);
     on<OrderStatusAdvanced>(_advance);
@@ -138,6 +139,33 @@ class OrderBloc extends Bloc<OrderEvent, OrderState> {
           revision: state.revision + 1,
         ),
       );
+    }
+  }
+
+  Future<void> _detail(
+    OrderDetailRequested event,
+    Emitter<OrderState> emit,
+  ) async {
+    if (!AppEnv.useRemote || event.id.isEmpty) return;
+    try {
+      final body = await _cache.get(ApiEndpoints.order(event.id));
+      final json = ApiJson.asMap(ApiJson.unwrap(body));
+      final order = json == null ? null : OrderModel.tryParse(json);
+      if (order == null) return;
+      final exists = state.orders.any((item) => item.id == order.id);
+      emit(
+        state.copyWith(
+          orders: exists
+              ? [
+                  for (final item in state.orders)
+                    item.id == order.id ? order : item,
+                ]
+              : [order, ...state.orders],
+          revision: state.revision + 1,
+        ),
+      );
+    } on Object catch (error) {
+      AppLogger.log('OrderBloc: detail failed $error');
     }
   }
 

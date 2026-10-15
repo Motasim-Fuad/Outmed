@@ -19,6 +19,8 @@ import 'package:outmed/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:outmed/features/catalog/data/repositories/catalog_repository_impl.dart';
 import 'package:outmed/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
+import 'package:outmed/features/catalog/presentation/bloc/category_bloc.dart';
+import 'package:outmed/features/catalog/presentation/bloc/category_event.dart';
 import 'package:outmed/features/catalog/presentation/bloc/supplier_directory_bloc.dart';
 import 'package:outmed/features/messages/presentation/bloc/chat_bloc.dart';
 import 'package:outmed/features/notifications/presentation/bloc/notification_bloc.dart';
@@ -91,6 +93,9 @@ class AppScope {
           SupplierRemote(cache, queue),
           () => getIt<ProfileBloc>().state.profile.organization,
         ),
+      )
+      ..registerLazySingleton<CategoryBloc>(
+        () => CategoryBloc(cache)..add(const CategoryStarted()),
       )
       ..registerLazySingleton<SupplierDirectoryBloc>(
         () => SupplierDirectoryBloc(cache),

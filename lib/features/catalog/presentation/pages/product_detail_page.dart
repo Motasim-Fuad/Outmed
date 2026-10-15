@@ -9,6 +9,7 @@ import 'package:outmed/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:outmed/features/cart/presentation/bloc/cart_event.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
+import 'package:outmed/features/catalog/presentation/bloc/catalog_event.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_state.dart';
 import 'package:outmed/features/catalog/presentation/bloc/supplier_directory_bloc.dart';
 import 'package:outmed/features/catalog/presentation/pages/widgets/offer_tile.dart';
@@ -39,7 +40,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     if (_hydrated) return;
     _hydrated = true;
     product = RouteArgs.maybe<Object>(context)! as ProductModel;
-    final best = context.read<CatalogBloc>().state.bestOfferFor(product.id);
+    final catalog = context.read<CatalogBloc>()
+      ..add(CatalogProductRequested(product.id));
+    final best = catalog.state.bestOfferFor(product.id);
     _selectedOfferId = best?.id ?? '';
     quantity = best?.minimumOrder ?? 1;
   }
@@ -89,9 +92,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       body: SafeArea(
         top: false,
         child:
-            BlocSelector<CatalogBloc, CatalogState, List<SupplierOfferModel>>(
-              selector: (state) => state.offersFor(product.id),
-              builder: (context, offers) {
+            BlocSelector<
+              CatalogBloc,
+              CatalogState,
+              (ProductModel, List<SupplierOfferModel>)
+            >(
+              selector: (state) => (
+                state.productById(product.id) ?? product,
+                state.offersFor(product.id),
+              ),
+              builder: (context, data) {
+                final (details, offers) = data;
                 SupplierOfferModel? selected;
                 for (final offer in offers) {
                   if (offer.id == _selectedOfferId) selected = offer;
@@ -113,8 +124,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               borderRadius: BorderRadius.circular(18),
                             ),
                             child: AppAssetImage(
-                              product.imageAsset,
-                              bytes: product.imageBytes,
+                              details.imageAsset,
+                              bytes: details.imageBytes,
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -277,12 +288,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           const SizedBox(height: 8),
                           Text(
                             [
-                              if (offer != null && offer.description.isNotEmpty)
+                              if (details.description.isNotEmpty)
+                                details.description
+                              else if (offer != null &&
+                                  offer.description.isNotEmpty)
                                 offer.description,
                               [
-                                product.manufacturer,
-                                product.reference,
-                                product.packSize,
+                                details.manufacturer,
+                                details.reference,
+                                details.packSize,
                               ].where((part) => part.isNotEmpty).join(' · '),
                             ].join('\n\n'),
                             style: const TextStyle(

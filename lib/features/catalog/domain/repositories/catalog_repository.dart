@@ -17,4 +17,5 @@ abstract interface class CatalogRepository {
   void replaceOwn(List<ProductModel> products, List<SupplierOfferModel> offers);
   void replaceProductId(String oldId, ProductModel product);
   Future<void> refreshRemote();
+  Future<void> refreshProduct(String productId);
 }

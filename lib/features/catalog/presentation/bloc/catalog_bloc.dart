@@ -13,6 +13,7 @@ class CatalogBloc extends Bloc<CatalogEvent, CatalogState> {
     on<CatalogStarted>(_load);
     on<CatalogRefreshRequested>(_load);
     on<CatalogSearchChanged>(_search);
+    on<CatalogProductRequested>(_product);
     add(const CatalogStarted());
   }
 
@@ -56,6 +57,24 @@ class CatalogBloc extends Bloc<CatalogEvent, CatalogState> {
           revision: state.revision + 1,
         ),
       );
+    }
+  }
+
+  Future<void> _product(
+    CatalogProductRequested event,
+    Emitter<CatalogState> emit,
+  ) async {
+    try {
+      await _repository.refreshProduct(event.productId);
+      emit(
+        state.copyWith(
+          products: _repository.getProducts(),
+          offers: _repository.getOffers(),
+          revision: state.revision + 1,
+        ),
+      );
+    } on Object catch (error) {
+      AppLogger.log('CatalogBloc: product detail failed $error');
     }
   }
 

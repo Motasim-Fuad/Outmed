@@ -271,7 +271,6 @@ class _AddOfferPageState extends State<AddOfferPage> {
       ),
       const SizedBox(height: 12),
       CategoryDropdown(
-        controller: categoryController,
         selectedId: categoryId,
         onChanged: (category) => setState(() {
           categoryId = category.id;

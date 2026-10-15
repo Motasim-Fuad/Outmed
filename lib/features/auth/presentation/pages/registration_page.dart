@@ -9,7 +9,9 @@ import 'package:outmed/features/auth/domain/user_role.dart';
 import 'package:outmed/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:outmed/features/auth/presentation/bloc/auth_event.dart';
 import 'package:outmed/features/auth/presentation/bloc/auth_state.dart';
+import 'package:outmed/features/auth/presentation/pages/widgets/medical_category_picker.dart';
 import 'package:outmed/features/auth/presentation/widgets/auth_submit_button.dart';
+import 'package:outmed/features/catalog/presentation/bloc/category_bloc.dart';
 import 'package:outmed/shared/widgets/app_text_field.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 
@@ -28,6 +30,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final formKey = GlobalKey<FormState>();
   int step = 0;
   String companyType = 'Manufacturer';
+  Set<String> medicalCategories = {};
+  String categoryError = '';
 
   @override
   void initState() {
@@ -171,6 +175,17 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     maxLines: 3,
                     validator: Validators.required,
                   ),
+                  if (supplier) ...[
+                    const SizedBox(height: 16),
+                    MedicalCategoryPicker(
+                      selected: medicalCategories,
+                      error: categoryError,
+                      onChanged: (value) => setState(() {
+                        medicalCategories = value;
+                        categoryError = '';
+                      }),
+                    ),
+                  ],
                 ],
                 const SizedBox(height: 22),
                 if (step > 0) ...[
@@ -200,6 +215,17 @@ class _RegistrationPageState extends State<RegistrationPage> {
       return;
     }
     final auth = context.read<AuthBloc>();
+    final hasCategories = context
+        .read<CategoryBloc>()
+        .state
+        .categories
+        .isNotEmpty;
+    if (auth.state.role == UserRole.supplier &&
+        hasCategories &&
+        medicalCategories.isEmpty) {
+      setState(() => categoryError = 'select_medical_category'.tr);
+      return;
+    }
     auth.add(
       AuthRegisterRequested({
         'company_name': controllers[0].text.trim(),
@@ -217,6 +243,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
         'postal_code': controllers[12].text.trim(),
         'address': controllers[13].text.trim(),
         'role': auth.state.role.name,
+        'medical_categories': medicalCategories.join(','),
       }),
     );
   }

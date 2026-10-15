@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/core/config/app_env.dart';
-import 'package:outmed/core/constants/app_assets.dart';
 import 'package:outmed/core/l10n/app_locale.dart';
 import 'package:outmed/core/logger/app_logger.dart';
 import 'package:outmed/core/network/api_error.dart';
@@ -172,7 +171,7 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
           manufacturer: event.manufacturer.trim(),
           reference: event.reference.trim(),
           packSize: event.packSize.trim(),
-          imageAsset: AppAssets.diagnosticKit,
+          imageAsset: '',
           imageBytes: event.imageBytes,
           brand: event.brand.trim(),
           specifications: event.specifications.trim(),

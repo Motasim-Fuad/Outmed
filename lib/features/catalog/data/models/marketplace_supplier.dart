@@ -106,7 +106,9 @@ class MarketplaceSupplier extends Equatable {
       about: ApiJson.text(json, const ['description', 'about']) ?? '',
       country: ApiJson.text(json, const ['country', 'businessCountry']) ?? '',
       companyType: ApiJson.text(json, const ['companyType']) ?? '',
-      verified: json['isVerified'] != false,
+      verified:
+          json['isVerified'] == true ||
+          ApiJson.text(json, const ['verificationStatus']) == 'VERIFIED',
     );
   }
 

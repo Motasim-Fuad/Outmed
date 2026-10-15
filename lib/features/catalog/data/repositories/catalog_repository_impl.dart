@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:outmed/core/config/app_env.dart';
 import 'package:outmed/core/constants/app_assets.dart';
+import 'package:outmed/core/logger/app_logger.dart';
 import 'package:outmed/core/network/api_endpoints.dart';
 import 'package:outmed/core/network/api_json.dart';
 import 'package:outmed/core/network/remote_cache.dart';
@@ -131,7 +134,16 @@ class CatalogRepositoryImpl implements CatalogRepository {
   final List<ProductModel> _products;
   final List<SupplierOfferModel> _offers;
   List<SupplierOfferModel>? _own;
+  final Map<String, Uint8List> _images = {};
   AppDatabase? _local;
+
+  ProductModel _withLocalImage(ProductModel product) {
+    if (product.imageBytes != null || product.imageAsset.startsWith('http')) {
+      return product;
+    }
+    final bytes = _images[product.id];
+    return bytes == null ? product : product.withImageBytes(bytes);
+  }
 
   @override
   List<ProductModel> getProducts() => List.unmodifiable(_products);
@@ -172,6 +184,8 @@ class CatalogRepositoryImpl implements CatalogRepository {
     if (productExists(name: product.name, reference: product.reference)) {
       throw const DuplicateProductException();
     }
+    final bytes = product.imageBytes;
+    if (bytes != null) _images[product.id] = bytes;
     _products.add(product);
     _persist();
     return product;
@@ -222,7 +236,8 @@ class CatalogRepositoryImpl implements CatalogRepository {
     List<ProductModel> products,
     List<SupplierOfferModel> offers,
   ) {
-    for (final product in products) {
+    for (final raw in products) {
+      final product = _withLocalImage(raw);
       final index = _products.indexWhere((item) => item.id == product.id);
       if (index >= 0) {
         _products[index] = product;
@@ -236,20 +251,27 @@ class CatalogRepositoryImpl implements CatalogRepository {
 
   @override
   void replaceProductId(String oldId, ProductModel product) {
+    final bytes = _images.remove(oldId);
+    if (bytes != null) _images[product.id] = bytes;
     _products
       ..removeWhere((item) => item.id == oldId || item.id == product.id)
-      ..add(product);
+      ..add(_withLocalImage(product));
     _persist();
   }
 
   Future<void> bindLocal(AppDatabase database) async {
     _local = database;
+    for (final row in await database.readBucket('product_images')) {
+      final id = row['id'];
+      final data = row['data'];
+      if (id is String && data is String) _images[id] = base64Decode(data);
+    }
     final products = await database.readBucket('products');
     final offers = await database.readBucket('offers');
     if (products.isNotEmpty) {
       _products
         ..clear()
-        ..addAll(products.map(ProductModel.fromJson));
+        ..addAll(products.map(ProductModel.fromJson).map(_withLocalImage));
     }
     if (offers.isNotEmpty) {
       _offers
@@ -266,6 +288,12 @@ class CatalogRepositoryImpl implements CatalogRepository {
     unawaited(
       database.writeBucket('products', {
         for (final item in _products) item.id: item.toJson(),
+      }),
+    );
+    unawaited(
+      database.writeBucket('product_images', {
+        for (final entry in _images.entries)
+          entry.key: {'id': entry.key, 'data': base64Encode(entry.value)},
       }),
     );
     unawaited(
@@ -291,12 +319,23 @@ class CatalogRepositoryImpl implements CatalogRepository {
       query: const {'page': 1, 'limit': 100},
     );
     final rows = ApiJson.maps(body);
+    try {
+      final featured = await _cache.get(ApiEndpoints.featuredProducts);
+      for (final row in ApiJson.maps(featured)) {
+        final id = ApiJson.text(row, const ['id']);
+        rows
+          ..removeWhere((item) => ApiJson.text(item, const ['id']) == id)
+          ..add({...row, 'isFeatured': true});
+      }
+    } on Object catch (error) {
+      AppLogger.log('Catalog: featured failed $error');
+    }
     final products = <ProductModel>[];
     final offers = <SupplierOfferModel>[];
     for (final row in rows) {
       final product = ProductModel.tryParse(row);
       if (product == null) continue;
-      products.add(product);
+      products.add(_withLocalImage(product));
       final offer = SupplierOfferModel.fromProductRow(row, product);
       if (offer != null) offers.add(offer);
     }
@@ -306,6 +345,31 @@ class CatalogRepositoryImpl implements CatalogRepository {
     _offers
       ..clear()
       ..addAll(offers);
+    _persist();
+  }
+
+  @override
+  Future<void> refreshProduct(String productId) async {
+    if (!AppEnv.useRemote) return;
+    final current = findProduct(productId);
+    if (current == null) return;
+    final key = current.slug.isNotEmpty ? current.slug : current.id;
+    final body = await _cache.get(ApiEndpoints.product(key));
+    final row = ApiJson.asMap(ApiJson.unwrap(body));
+    if (row == null) return;
+    final parsed = ProductModel.tryParse({
+      ...row,
+      if (current.featured) 'isFeatured': true,
+    });
+    if (parsed == null) return;
+    final index = _products.indexWhere((item) => item.id == productId);
+    if (index >= 0) _products[index] = _withLocalImage(parsed);
+    final offer = SupplierOfferModel.fromProductRow(row, parsed);
+    if (offer != null) {
+      _offers
+        ..removeWhere((item) => item.productId == productId)
+        ..add(offer);
+    }
     _persist();
   }
 }

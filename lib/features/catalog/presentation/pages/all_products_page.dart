@@ -9,8 +9,12 @@ import 'package:outmed/core/status/load_status.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_event.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_state.dart';
+import 'package:outmed/features/catalog/presentation/bloc/category_bloc.dart';
+import 'package:outmed/features/catalog/presentation/bloc/category_state.dart';
+import 'package:outmed/features/catalog/presentation/category_match.dart';
 import 'package:outmed/features/catalog/presentation/pages/widgets/category_filter_chip.dart';
 import 'package:outmed/features/catalog/presentation/pages/widgets/product_grid_shimmer.dart';
+import 'package:outmed/features/supplier/data/models/category_option.dart';
 import 'package:outmed/shared/widgets/product_card.dart';
 
 class AllProductsPage extends StatefulWidget {
@@ -21,16 +25,8 @@ class AllProductsPage extends StatefulWidget {
 }
 
 class _AllProductsPageState extends State<AllProductsPage> {
-  static const List<(String, String)> _filters = [
-    ('All', 'all'),
-    ('PPE & Safety', 'ppe'),
-    ('Surgical', 'surgical'),
-    ('Diagnostic', 'diagnostic'),
-    ('Dental', 'dental'),
-  ];
-
   final searchController = TextEditingController();
-  String category = 'All';
+  CategoryOption? category;
   bool _hydrated = false;
 
   @override
@@ -39,7 +35,8 @@ class _AllProductsPageState extends State<AllProductsPage> {
     if (_hydrated) return;
     _hydrated = true;
     final extra = RouteArgs.maybe<Object>(context);
-    if (extra is String) category = extra;
+    if (extra is CategoryOption) category = extra;
+    if (extra is String) category = CategoryOption(id: extra, name: extra);
   }
 
   @override
@@ -59,11 +56,10 @@ class _AllProductsPageState extends State<AllProductsPage> {
   @override
   Widget build(BuildContext context) {
     final query = searchController.text.trim().toLowerCase();
+    final selected = category;
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(category == 'All' ? 'all_products'.tr : category),
-      ),
+      appBar: AppBar(title: Text(selected?.name ?? 'all_products'.tr)),
       body: BlocSelector<CatalogBloc, CatalogState, (int, CatalogState)>(
         selector: (state) => (state.revision, state),
         builder: (context, data) {
@@ -71,7 +67,7 @@ class _AllProductsPageState extends State<AllProductsPage> {
           final products = catalog.products
               .where(
                 (product) =>
-                    (category == 'All' || product.category == category) &&
+                    (selected == null || selected.contains(product)) &&
                     (query.isEmpty || product.searchableText.contains(query)),
               )
               .toList(growable: false);
@@ -100,18 +96,34 @@ class _AllProductsPageState extends State<AllProductsPage> {
                       const SizedBox(height: 14),
                       SizedBox(
                         height: 36,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            for (final filter in _filters)
-                              CategoryFilterChip(
-                                text: filter.$2.tr,
-                                selected: category == filter.$1,
-                                onTap: () =>
-                                    setState(() => category = filter.$1),
+                        child:
+                            BlocSelector<
+                              CategoryBloc,
+                              CategoryState,
+                              List<CategoryOption>
+                            >(
+                              selector: (state) => state.categories,
+                              builder: (context, categories) => ListView(
+                                scrollDirection: Axis.horizontal,
+                                children: [
+                                  CategoryFilterChip(
+                                    text: 'all'.tr,
+                                    selected: selected == null,
+                                    onTap: () =>
+                                        setState(() => category = null),
+                                  ),
+                                  for (final item in categories)
+                                    CategoryFilterChip(
+                                      text: item.name,
+                                      selected:
+                                          selected?.id == item.id ||
+                                          selected?.name == item.name,
+                                      onTap: () =>
+                                          setState(() => category = item),
+                                    ),
+                                ],
                               ),
-                          ],
-                        ),
+                            ),
                       ),
                       const SizedBox(height: 8),
                       Text(

@@ -682,12 +682,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           'pickupCountry': _value(payload, 'country'),
         },
       );
-      final categories = await _dio.get<dynamic>(ApiEndpoints.categories);
-      final ids = ApiJson.maps(categories.data)
-          .map((row) => ApiJson.text(row, const ['id']))
-          .whereType<String>()
-          .take(1)
-          .toList();
+      final ids = _value(
+        payload,
+        'medical_categories',
+      ).split(',').where((id) => id.isNotEmpty).toList();
       if (ids.isNotEmpty) {
         await _dio.post<dynamic>(
           ApiEndpoints.supplierOnboardingStep3,

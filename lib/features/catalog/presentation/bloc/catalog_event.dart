@@ -23,3 +23,12 @@ class CatalogSearchChanged extends CatalogEvent {
 class CatalogRefreshRequested extends CatalogEvent {
   const CatalogRefreshRequested();
 }
+
+class CatalogProductRequested extends CatalogEvent {
+  const CatalogProductRequested(this.productId);
+
+  final String productId;
+
+  @override
+  List<Object?> get props => [productId];
+}

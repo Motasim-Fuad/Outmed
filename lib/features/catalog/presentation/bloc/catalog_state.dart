@@ -30,6 +30,12 @@ class CatalogState extends Equatable {
         .toList(growable: false);
   }
 
+  List<ProductModel> get featured {
+    final visible = visibleProducts;
+    final marked = visible.where((product) => product.featured).toList();
+    return marked.isEmpty ? visible : marked;
+  }
+
   List<SupplierOfferModel> offersFor(String productId) {
     return offers
         .where((offer) => offer.productId == productId)
