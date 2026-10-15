@@ -8,6 +8,7 @@ class CatalogState extends Equatable {
     this.offers = const [],
     this.searchQuery = '',
     this.status = LoadStatus.initial,
+    this.errorMessage = '',
     this.revision = 0,
   });
 
@@ -15,17 +16,24 @@ class CatalogState extends Equatable {
   final List<SupplierOfferModel> offers;
   final String searchQuery;
   final LoadStatus status;
+  final String errorMessage;
   final int revision;
+
+  bool get loading => status == LoadStatus.loading && products.isEmpty;
 
   List<ProductModel> get visibleProducts {
     final query = searchQuery.trim().toLowerCase();
     return products
-        .where((product) => query.isEmpty || product.searchableText.contains(query))
+        .where(
+          (product) => query.isEmpty || product.searchableText.contains(query),
+        )
         .toList(growable: false);
   }
 
   List<SupplierOfferModel> offersFor(String productId) {
-    return offers.where((offer) => offer.productId == productId).toList(growable: false)
+    return offers
+        .where((offer) => offer.productId == productId)
+        .toList(growable: false)
       ..sort((a, b) => a.price.compareTo(b.price));
   }
 
@@ -53,6 +61,7 @@ class CatalogState extends Equatable {
     List<SupplierOfferModel>? offers,
     String? searchQuery,
     LoadStatus? status,
+    String? errorMessage,
     int? revision,
   }) {
     return CatalogState(
@@ -60,10 +69,11 @@ class CatalogState extends Equatable {
       offers: offers ?? this.offers,
       searchQuery: searchQuery ?? this.searchQuery,
       status: status ?? this.status,
+      errorMessage: errorMessage ?? this.errorMessage,
       revision: revision ?? this.revision,
     );
   }
 
   @override
-  List<Object?> get props => [revision, status, searchQuery];
+  List<Object?> get props => [revision, status, searchQuery, errorMessage];
 }

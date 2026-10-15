@@ -11,5 +11,4 @@ abstract final class AppAssets {
   static const healthFacility = 'assets/images/health_facility.png';
   static const supplierWarehouse = 'assets/images/supplier_warehouse.png';
   static const authScreen = 'assets/images/authScreen.png';
-
 }

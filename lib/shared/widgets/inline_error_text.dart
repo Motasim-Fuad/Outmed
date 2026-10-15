@@ -13,7 +13,11 @@ class InlineErrorText extends StatelessWidget {
       padding: const EdgeInsets.only(top: 8),
       child: Text(
         message,
-        style: const TextStyle(color: AppColors.danger, fontSize: 12, fontWeight: FontWeight.w600),
+        style: const TextStyle(
+          color: AppColors.danger,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

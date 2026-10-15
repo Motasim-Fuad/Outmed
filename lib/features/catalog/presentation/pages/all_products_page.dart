@@ -5,8 +5,12 @@ import 'package:outmed/core/constants/app_colors.dart';
 import 'package:outmed/core/l10n/tr.dart';
 import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/core/router/route_args.dart';
-import 'package:outmed/features/catalog/data/models/product_model.dart';
+import 'package:outmed/core/status/load_status.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
+import 'package:outmed/features/catalog/presentation/bloc/catalog_event.dart';
+import 'package:outmed/features/catalog/presentation/bloc/catalog_state.dart';
+import 'package:outmed/features/catalog/presentation/pages/widgets/category_filter_chip.dart';
+import 'package:outmed/features/catalog/presentation/pages/widgets/product_grid_shimmer.dart';
 import 'package:outmed/shared/widgets/product_card.dart';
 
 class AllProductsPage extends StatefulWidget {
@@ -17,9 +21,17 @@ class AllProductsPage extends StatefulWidget {
 }
 
 class _AllProductsPageState extends State<AllProductsPage> {
+  static const List<(String, String)> _filters = [
+    ('All', 'all'),
+    ('PPE & Safety', 'ppe'),
+    ('Surgical', 'surgical'),
+    ('Diagnostic', 'diagnostic'),
+    ('Dental', 'dental'),
+  ];
+
   final searchController = TextEditingController();
   String category = 'All';
-  var _hydrated = false;
+  bool _hydrated = false;
 
   @override
   void didChangeDependencies() {
@@ -36,164 +48,126 @@ class _AllProductsPageState extends State<AllProductsPage> {
     super.dispose();
   }
 
-  List<ProductModel> _products(CatalogBloc catalog) {
-    final query = searchController.text.trim().toLowerCase();
-    return catalog.products
-        .where((product) {
-          final categoryMatches =
-              category == 'All' || product.category == category;
-          final queryMatches =
-              query.isEmpty || product.searchableText.contains(query);
-          return categoryMatches && queryMatches;
-        })
-        .toList(growable: false);
+  Future<void> _refresh() async {
+    final catalog = context.read<CatalogBloc>()
+      ..add(const CatalogRefreshRequested());
+    await catalog.stream.firstWhere(
+      (state) => state.status != LoadStatus.loading,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final catalog = context.watch<CatalogBloc>();
-    final products = _products(catalog);
+    final query = searchController.text.trim().toLowerCase();
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: Text(category == 'All' ? 'all_products'.tr : category),
       ),
-      body: Builder(builder: (context) => CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
-              sliver: SliverList.list(
-                children: [
-                  TextField(
-                    controller: searchController,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: 'search_products'.tr,
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(13),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    height: 36,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        _FilterChip(
-                          text: 'all'.tr,
-                          selected: category == 'All',
-                          onTap: () => setState(() => category = 'All'),
-                        ),
-                        _FilterChip(
-                          text: 'ppe'.tr,
-                          selected: category == 'PPE & Safety',
-                          onTap: () =>
-                              setState(() => category = 'PPE & Safety'),
-                        ),
-                        _FilterChip(
-                          text: 'surgical'.tr,
-                          selected: category == 'Surgical',
-                          onTap: () => setState(() => category = 'Surgical'),
-                        ),
-                        _FilterChip(
-                          text: 'diagnostic'.tr,
-                          selected: category == 'Diagnostic',
-                          onTap: () => setState(() => category = 'Diagnostic'),
-                        ),
-                        _FilterChip(
-                          text: 'dental'.tr,
-                          selected: category == 'Dental',
-                          onTap: () => setState(() => category = 'Dental'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${products.length} ${'products'.tr}',
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (products.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Text(
-                    'no_product_found'.tr,
-                    style: const TextStyle(color: AppColors.muted),
-                  ),
-                ),
+      body: BlocSelector<CatalogBloc, CatalogState, (int, CatalogState)>(
+        selector: (state) => (state.revision, state),
+        builder: (context, data) {
+          final catalog = data.$2;
+          final products = catalog.products
+              .where(
+                (product) =>
+                    (category == 'All' || product.category == category) &&
+                    (query.isEmpty || product.searchableText.contains(query)),
               )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
-                sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: .70,
-                  ),
-                  delegate: SliverChildBuilderDelegate((context, index) {
-                    final product = products[index];
-                    return ProductCard(
-                      product: product,
-                      offer: catalog.bestOfferFor(product.id),
-                      onTap: () => AppNav.push(
-                        AppRoutes.productDetail,
-                        extra: product,
+              .toList(growable: false);
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
+                  sliver: SliverList.list(
+                    children: [
+                      TextField(
+                        controller: searchController,
+                        onChanged: (_) => setState(() {}),
+                        decoration: InputDecoration(
+                          hintText: 'search_products'.tr,
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(13),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
                       ),
-                    );
-                  }, childCount: products.length),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: 36,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            for (final filter in _filters)
+                              CategoryFilterChip(
+                                text: filter.$2.tr,
+                                selected: category == filter.$1,
+                                onTap: () =>
+                                    setState(() => category = filter.$1),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${products.length} ${'products'.tr}',
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.text,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String text;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(end: 8),
-      child: ChoiceChip(
-        label: Text(text),
-        selected: selected,
-        onSelected: (_) => onTap(),
-        showCheckmark: false,
-        selectedColor: AppColors.primarySoft,
-        side: BorderSide(
-          color: selected ? AppColors.primary : AppColors.border,
-        ),
-        labelStyle: TextStyle(
-          color: selected ? AppColors.primary : AppColors.muted,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
+                if (catalog.loading)
+                  const ProductGridShimmer()
+                else if (products.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Text(
+                        catalog.errorMessage.isEmpty
+                            ? 'no_product_found'.tr
+                            : catalog.errorMessage,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: AppColors.muted),
+                      ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                    sliver: SliverGrid(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: .70,
+                          ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final product = products[index];
+                        return ProductCard(
+                          product: product,
+                          offer: catalog.bestOfferFor(product.id),
+                          onTap: () => AppNav.push(
+                            AppRoutes.productDetail,
+                            extra: product,
+                          ),
+                        );
+                      }, childCount: products.length),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

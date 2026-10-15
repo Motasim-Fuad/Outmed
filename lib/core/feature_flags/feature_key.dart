@@ -1,1 +1,8 @@
-enum FeatureKey { buyerCheckout, supplierOffers, messages, stripePayments, maintenance, forceUpdate }
+enum FeatureKey {
+  buyerCheckout,
+  supplierOffers,
+  messages,
+  stripePayments,
+  maintenance,
+  forceUpdate,
+}

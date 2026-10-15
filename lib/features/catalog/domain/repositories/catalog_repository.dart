@@ -13,5 +13,8 @@ abstract interface class CatalogRepository {
   ProductModel createMasterProduct(ProductModel product);
   SupplierOfferModel saveOffer(SupplierOfferModel offer);
   bool deleteOffer(String id);
+  List<SupplierOfferModel> ownOffers(String supplierName);
+  void replaceOwn(List<ProductModel> products, List<SupplierOfferModel> offers);
+  void replaceProductId(String oldId, ProductModel product);
   Future<void> refreshRemote();
 }

@@ -32,7 +32,8 @@ void main() {
   blocTest<AuthBloc, AuthState>(
     'empty credentials stay signed out',
     build: () => bloc,
-    act: (bloc) => bloc.add(const AuthLoginRequested(email: ' ', password: ' ')),
+    act: (bloc) =>
+        bloc.add(const AuthLoginRequested(email: ' ', password: ' ')),
     verify: (bloc) {
       expect(bloc.state.authenticated, isFalse);
       expect(bloc.state.status, LoadStatus.failure);

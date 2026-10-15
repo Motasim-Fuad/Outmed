@@ -17,7 +17,10 @@ class BackgroundSync {
         'outmed-sync',
         'outmed-sync',
         frequency: const Duration(hours: 12),
-        constraints: Constraints(networkType: NetworkType.connected, requiresBatteryNotLow: true),
+        constraints: Constraints(
+          networkType: NetworkType.connected,
+          requiresBatteryNotLow: true,
+        ),
       );
     } on Object catch (error) {
       AppLogger.log('BackgroundSync: $error');

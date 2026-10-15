@@ -23,7 +23,10 @@ class StripePaymentService {
     }
   }
 
-  Future<String?> pay({required int amountInMinor, required String currency}) async {
+  Future<String?> pay({
+    required int amountInMinor,
+    required String currency,
+  }) async {
     if (!ready) return null;
     try {
       final response = await _dio.post<dynamic>(
@@ -46,7 +49,10 @@ class StripePaymentService {
     } on StripeException catch (error) {
       return error.error.message ?? AppLocale.translate('payment_failed');
     } on DioException catch (error) {
-      return ApiResponse.detailMessage(error.response?.data, AppLocale.translate('payment_failed'));
+      return ApiResponse.detailMessage(
+        error.response?.data,
+        AppLocale.translate('payment_failed'),
+      );
     }
   }
 }

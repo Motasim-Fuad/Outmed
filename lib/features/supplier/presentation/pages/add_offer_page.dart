@@ -7,11 +7,17 @@ import 'package:outmed/core/constants/app_colors.dart';
 import 'package:outmed/core/l10n/tr.dart';
 import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/core/router/route_args.dart';
+import 'package:outmed/core/validation/validators.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
 import 'package:outmed/features/supplier/presentation/bloc/supplier_bloc.dart';
 import 'package:outmed/features/supplier/presentation/bloc/supplier_event.dart';
 import 'package:outmed/features/supplier/presentation/bloc/supplier_state.dart';
-import 'package:outmed/shared/widgets/app_asset_image.dart';
+import 'package:outmed/features/supplier/presentation/pages/widgets/catalog_search_empty.dart';
+import 'package:outmed/features/supplier/presentation/pages/widgets/category_dropdown.dart';
+import 'package:outmed/features/supplier/presentation/pages/widgets/form_section_title.dart';
+import 'package:outmed/features/supplier/presentation/pages/widgets/locked_product_card.dart';
+import 'package:outmed/features/supplier/presentation/pages/widgets/product_image_picker_box.dart';
+import 'package:outmed/features/supplier/presentation/pages/widgets/search_product_tile.dart';
 import 'package:outmed/shared/widgets/app_text_field.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 import 'package:outmed/shared/widgets/inline_error_text.dart';
@@ -45,15 +51,16 @@ class _AddOfferPageState extends State<AddOfferPage> {
   SupplierOfferModel? existing;
   bool showCreateForm = false;
   Uint8List? selectedImageBytes;
+  String categoryId = '';
   bool _hydrated = false;
-  String imageError = '';
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_hydrated) return;
     _hydrated = true;
-    final supplier = context.read<SupplierBloc>();
+    final supplier = context.read<SupplierBloc>()
+      ..add(const SupplierFeedbackCleared());
     if (RouteArgs.maybe<Object>(context) case final SupplierOfferModel offer) {
       existing = offer;
       final product = supplier.productForOffer(offer);
@@ -70,322 +77,28 @@ class _AddOfferPageState extends State<AddOfferPage> {
 
   @override
   void dispose() {
-    searchController.dispose();
-    nameController.dispose();
-    brandController.dispose();
-    categoryController.dispose();
-    manufacturerController.dispose();
-    referenceController.dispose();
-    specificationsController.dispose();
-    packSizeController.dispose();
-    barcodeController.dispose();
-    countryController.dispose();
-    storageController.dispose();
-    documentController.dispose();
-    priceController.dispose();
-    stockController.dispose();
-    descriptionController.dispose();
-    minimumOrderController.dispose();
-    preparationController.dispose();
+    for (final controller in [
+      searchController,
+      nameController,
+      brandController,
+      categoryController,
+      manufacturerController,
+      referenceController,
+      specificationsController,
+      packSizeController,
+      barcodeController,
+      countryController,
+      storageController,
+      documentController,
+      priceController,
+      stockController,
+      descriptionController,
+      minimumOrderController,
+      preparationController,
+    ]) {
+      controller.dispose();
+    }
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final supplier = context.watch<SupplierBloc>();
-    return BlocListener<SupplierBloc, SupplierState>(
-      listenWhen: (previous, current) => !previous.closePage && current.closePage,
-      listener: (context, state) => AppNav.pop(),
-      child: Scaffold(
-      backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: Text(
-          existing == null ? 'add_product_offer'.tr : 'edit_offer'.tr,
-        ),
-      ),
-      body: Form(
-        key: formKey,
-        child: Builder(builder: (context) => ListView(
-            padding: const EdgeInsets.fromLTRB(18, 10, 18, 28),
-            children: [
-              if (supplier.state.selectedProduct == null) ...[
-                _SectionHeader(
-                  title: 'search_before_create'.tr,
-                  subtitle: 'select_master_product_hint'.tr,
-                ),
-                TextField(
-                  controller: searchController,
-                  onChanged: (value) {
-                    supplier.add(SupplierSearchChanged(value));
-                    setState(() => showCreateForm = false);
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'search_catalog'.tr,
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(13),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                if (searchController.text.isNotEmpty &&
-                    supplier.state.searchResults.isNotEmpty)
-                  ...supplier.state.searchResults.map(
-                    (product) => _SearchProductTile(
-                      product: product,
-                      onTap: () {
-                        supplier.add(SupplierProductSelected(product));
-                        setState(() => showCreateForm = false);
-                      },
-                    ),
-                  ),
-                if (searchController.text.isNotEmpty &&
-                    supplier.state.searchResults.isEmpty &&
-                    !showCreateForm)
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.search_off_rounded,
-                          color: AppColors.muted,
-                          size: 34,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'no_product_found'.tr,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'create_only_if_missing'.tr,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        CustomButton(
-                          label: 'create_new_product'.tr,
-                          outlined: true,
-                          onPressed: () {
-                            nameController.text = searchController.text;
-                            setState(() => showCreateForm = true);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                if (showCreateForm) _buildCreateForm(supplier),
-              ] else ...[
-                _buildLockedProduct(supplier, supplier.state.selectedProduct!),
-                const SizedBox(height: 20),
-                _buildOfferForm(supplier, supplier.state.selectedProduct!),
-              ],
-            ],
-          ),
-        ),
-      ),
-      ),
-    );
-  }
-
-  Widget _buildCreateForm(SupplierBloc supplier) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        _SectionHeader(
-          title: 'create_new_product'.tr,
-          subtitle: 'canonical_locked'.tr,
-        ),
-        InkWell(
-          onTap: _pickProductImage,
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            height: 150,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: selectedImageBytes == null
-                    ? AppColors.border
-                    : AppColors.primary,
-              ),
-            ),
-            child: selectedImageBytes == null
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const CircleAvatar(
-                        radius: 25,
-                        backgroundColor: AppColors.primarySoft,
-                        child: Icon(
-                          Icons.add_photo_alternate_outlined,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'upload_product_image'.tr,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'product_image'.tr,
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  )
-                : Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(13),
-                        child: Image.memory(
-                          selectedImageBytes!,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      PositionedDirectional(
-                        top: 8,
-                        end: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 9,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.ink.withValues(alpha: .78),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Text(
-                            'change_product_image'.tr,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: nameController,
-          label: 'product_name'.tr,
-          validator: _required,
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: brandController,
-          label: 'brand'.tr,
-          validator: _required,
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: categoryController,
-          label: 'category'.tr,
-          validator: _required,
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: manufacturerController,
-          label: 'manufacturer'.tr,
-          validator: _required,
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: referenceController,
-          label: 'model_number'.tr,
-          validator: _required,
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: specificationsController,
-          label: 'specifications'.tr,
-          validator: _required,
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: packSizeController,
-          label: 'pack_size'.tr,
-          validator: _required,
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: barcodeController,
-          label: 'barcode_udi'.tr,
-          validator: _required,
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: countryController,
-          label: 'country_of_origin'.tr,
-          validator: _required,
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: storageController,
-          label: 'storage_requirements'.tr,
-          maxLines: 2,
-          validator: _required,
-        ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: documentController,
-          label: 'product_documents'.tr,
-          hint: 'upload_product_document'.tr,
-        ),
-        const SizedBox(height: 16),
-        CustomButton(
-          label: 'create_new_product'.tr,
-          onPressed: () {
-            if (!(formKey.currentState?.validate() ?? false)) return;
-            if (selectedImageBytes == null) {
-              setState(() => imageError = 'image_required'.tr);
-              return;
-            }
-            setState(() => imageError = '');
-            supplier.add(
-              SupplierProductCreateRequested(
-                name: nameController.text,
-                brand: brandController.text,
-                category: categoryController.text,
-                manufacturer: manufacturerController.text,
-                reference: referenceController.text,
-                specifications: specificationsController.text,
-                packSize: packSizeController.text,
-                barcode: barcodeController.text,
-                countryOfOrigin: countryController.text,
-                storageRequirements: storageController.text,
-                documentName: documentController.text,
-                imageBytes: selectedImageBytes!,
-              ),
-            );
-          },
-        ),
-        InlineErrorText(
-          message: imageError.isEmpty ? supplier.state.errorMessage : imageError,
-        ),
-      ],
-    );
   }
 
   Future<void> _pickProductImage() async {
@@ -400,229 +113,300 @@ class _AddOfferPageState extends State<AddOfferPage> {
     setState(() => selectedImageBytes = bytes);
   }
 
-  Widget _buildLockedProduct(SupplierBloc supplier, ProductModel product) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.canvas,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: AppAssetImage(
-                  product.imageAsset,
-                  bytes: product.imageBytes,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'canonical_product'.tr,
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      product.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '${product.manufacturer} · ${product.reference}',
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.lock_outline_rounded, color: AppColors.primary),
-            ],
-          ),
-          const Divider(height: 26),
-          Text(
-            'canonical_locked'.tr,
-            style: const TextStyle(color: AppColors.muted, fontSize: 11),
-          ),
-          if (existing == null) ...[
-            const SizedBox(height: 10),
-            TextButton.icon(
-              onPressed: () => supplier.add(const SupplierSelectionCleared()),
-              icon: const Icon(Icons.swap_horiz_rounded),
-              label: Text('select_product'.tr),
-            ),
-          ],
-        ],
+  void _createProduct() {
+    if (!(formKey.currentState?.validate() ?? false)) return;
+    context.read<SupplierBloc>().add(
+      SupplierProductCreateRequested(
+        name: nameController.text,
+        brand: brandController.text,
+        category: categoryController.text,
+        categoryId: categoryId,
+        manufacturer: manufacturerController.text,
+        reference: referenceController.text,
+        specifications: specificationsController.text,
+        packSize: packSizeController.text,
+        barcode: barcodeController.text,
+        countryOfOrigin: countryController.text,
+        storageRequirements: storageController.text,
+        documentName: documentController.text,
+        imageBytes: selectedImageBytes,
       ),
     );
   }
 
-  Widget _buildOfferForm(SupplierBloc supplier, ProductModel product) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionHeader(
-          title: 'offer_information'.tr,
-          subtitle: 'supplier_editable_fields'.tr,
+  void _saveOffer(ProductModel product) {
+    if (!(formKey.currentState?.validate() ?? false)) return;
+    context.read<SupplierBloc>().add(
+      SupplierOfferSaveRequested(
+        product: product,
+        price: double.parse(priceController.text.trim()),
+        stock: int.parse(stockController.text.trim()),
+        description: descriptionController.text,
+        minimumOrder: int.parse(minimumOrderController.text.trim()),
+        preparationDays: int.parse(preparationController.text.trim()),
+        existing: existing,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<SupplierBloc, SupplierState>(
+      listenWhen: (previous, current) =>
+          !previous.closePage && current.closePage,
+      listener: (context, state) => AppNav.pop(),
+      child: Scaffold(
+        backgroundColor: AppColors.canvas,
+        appBar: AppBar(
+          title: Text(
+            existing == null ? 'add_product_offer'.tr : 'edit_offer'.tr,
+          ),
         ),
-        Row(
-          children: [
-            Expanded(
-              child: AppTextField(
-                controller: priceController,
-                label: 'price'.tr,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                validator: _required,
-              ),
+        body: Form(
+          key: formKey,
+          child: BlocSelector<SupplierBloc, SupplierState, ProductModel?>(
+            selector: (state) => state.selectedProduct,
+            builder: (context, selected) => ListView(
+              padding: const EdgeInsets.fromLTRB(18, 10, 18, 28),
+              children: selected == null
+                  ? _searchSection()
+                  : [
+                      LockedProductCard(
+                        product: selected,
+                        onChange: existing == null
+                            ? () => context.read<SupplierBloc>().add(
+                                const SupplierSelectionCleared(),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(height: 20),
+                      ..._offerForm(selected),
+                    ],
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: AppTextField(
-                controller: stockController,
-                label: 'stock'.tr,
-                keyboardType: TextInputType.number,
-                validator: _required,
-              ),
-            ),
-          ],
+          ),
         ),
-        const SizedBox(height: 12),
-        AppTextField(
-          controller: descriptionController,
-          label: 'description'.tr,
-          maxLines: 4,
-          validator: _required,
+      ),
+    );
+  }
+
+  List<Widget> _searchSection() {
+    return [
+      FormSectionTitle(
+        title: 'search_before_create'.tr,
+        subtitle: 'select_master_product_hint'.tr,
+      ),
+      TextField(
+        controller: searchController,
+        onChanged: (value) {
+          context.read<SupplierBloc>().add(SupplierSearchChanged(value));
+          setState(() => showCreateForm = false);
+        },
+        decoration: InputDecoration(
+          hintText: 'search_catalog'.tr,
+          prefixIcon: const Icon(Icons.search_rounded),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(13),
+            borderSide: BorderSide.none,
+          ),
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: AppTextField(
-                controller: minimumOrderController,
-                label: 'minimum_order'.tr,
-                keyboardType: TextInputType.number,
-                validator: _required,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: AppTextField(
-                controller: preparationController,
-                label: 'preparation_days'.tr,
-                keyboardType: TextInputType.number,
-                validator: _required,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 18),
-        CustomButton(
-          label: existing == null ? 'save_offer'.tr : 'update_offer'.tr,
-          onPressed: () {
-            if (!(formKey.currentState?.validate() ?? false)) return;
-            supplier.add(
-              SupplierOfferSaveRequested(
-                product: product,
-                price: double.parse(priceController.text),
-                stock: int.parse(stockController.text),
-                description: descriptionController.text,
-                minimumOrder: int.parse(minimumOrderController.text),
-                preparationDays: int.parse(preparationController.text),
-                existing: existing,
-              ),
+      ),
+      const SizedBox(height: 14),
+      BlocSelector<SupplierBloc, SupplierState, List<ProductModel>>(
+        selector: (state) => state.searchResults,
+        builder: (context, results) {
+          if (searchController.text.isEmpty) return const SizedBox.shrink();
+          if (results.isEmpty) {
+            if (showCreateForm) return const SizedBox.shrink();
+            return CatalogSearchEmpty(
+              onCreate: () {
+                nameController.text = searchController.text;
+                setState(() => showCreateForm = true);
+              },
             );
-
-          },
-        ),
-      ],
-    );
+          }
+          return Column(
+            children: [
+              for (final product in results)
+                SearchProductTile(
+                  product: product,
+                  onTap: () {
+                    context.read<SupplierBloc>().add(
+                      SupplierProductSelected(product),
+                    );
+                    setState(() => showCreateForm = false);
+                  },
+                ),
+            ],
+          );
+        },
+      ),
+      if (showCreateForm) ..._createForm(),
+    ];
   }
 
-  String? _required(String? value) {
-    return value == null || value.trim().isEmpty ? 'required_field'.tr : null;
+  List<Widget> _createForm() {
+    return [
+      const SizedBox(height: 20),
+      FormSectionTitle(
+        title: 'create_new_product'.tr,
+        subtitle: 'canonical_locked'.tr,
+      ),
+      ProductImagePickerBox(
+        bytes: selectedImageBytes,
+        onTap: _pickProductImage,
+      ),
+      const SizedBox(height: 12),
+      AppTextField(
+        controller: nameController,
+        label: 'product_name'.tr,
+        validator: Validators.required,
+      ),
+      const SizedBox(height: 12),
+      AppTextField(
+        controller: brandController,
+        label: 'brand'.tr,
+        validator: Validators.required,
+      ),
+      const SizedBox(height: 12),
+      CategoryDropdown(
+        controller: categoryController,
+        selectedId: categoryId,
+        onChanged: (category) => setState(() {
+          categoryId = category.id;
+          categoryController.text = category.name;
+        }),
+      ),
+      const SizedBox(height: 12),
+      AppTextField(
+        controller: manufacturerController,
+        label: '${'manufacturer'.tr} (${'optional'.tr})',
+      ),
+      const SizedBox(height: 12),
+      AppTextField(
+        controller: referenceController,
+        label: 'model_number'.tr,
+        validator: Validators.required,
+      ),
+      const SizedBox(height: 12),
+      AppTextField(
+        controller: specificationsController,
+        label: 'specifications'.tr,
+        validator: Validators.required,
+      ),
+      const SizedBox(height: 12),
+      AppTextField(
+        controller: packSizeController,
+        label: 'pack_size'.tr,
+        validator: Validators.required,
+      ),
+      const SizedBox(height: 12),
+      AppTextField(
+        controller: barcodeController,
+        label: '${'barcode_udi'.tr} (${'optional'.tr})',
+      ),
+      const SizedBox(height: 12),
+      AppTextField(
+        controller: countryController,
+        label: 'country_of_origin'.tr,
+        validator: Validators.required,
+      ),
+      const SizedBox(height: 12),
+      AppTextField(
+        controller: storageController,
+        label: '${'storage_requirements'.tr} (${'optional'.tr})',
+        maxLines: 2,
+      ),
+      const SizedBox(height: 12),
+      AppTextField(
+        controller: documentController,
+        label: '${'product_documents'.tr} (${'optional'.tr})',
+        hint: 'upload_product_document'.tr,
+      ),
+      const SizedBox(height: 16),
+      CustomButton(label: 'create_new_product'.tr, onPressed: _createProduct),
+      BlocSelector<SupplierBloc, SupplierState, String>(
+        selector: (state) => state.errorMessage,
+        builder: (context, message) => InlineErrorText(message: message),
+      ),
+    ];
   }
-}
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, required this.subtitle});
-
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
+  List<Widget> _offerForm(ProductModel product) {
+    return [
+      FormSectionTitle(
+        title: 'offer_information'.tr,
+        subtitle: 'supplier_editable_fields'.tr,
+      ),
+      Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          Expanded(
+            child: AppTextField(
+              controller: priceController,
+              label: 'price'.tr,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              validator: Validators.price,
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+          const SizedBox(width: 10),
+          Expanded(
+            child: AppTextField(
+              controller: stockController,
+              label: 'stock'.tr,
+              keyboardType: TextInputType.number,
+              validator: Validators.wholeNumber(),
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SearchProductTile extends StatelessWidget {
-  const _SearchProductTile({required this.product, required this.onTap});
-
-  final ProductModel product;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AppColors.border),
+      const SizedBox(height: 12),
+      AppTextField(
+        controller: descriptionController,
+        label: '${'description'.tr} (${'optional'.tr})',
+        maxLines: 4,
       ),
-      child: ListTile(
-        onTap: onTap,
-        leading: SizedBox(
-          width: 52,
-          child: AppAssetImage(product.imageAsset, bytes: product.imageBytes),
-        ),
-        title: Text(
-          product.name,
-          style: const TextStyle(fontWeight: FontWeight.w800),
-        ),
-        subtitle: Text('${product.manufacturer} · ${product.reference}'),
-        trailing: const Icon(Icons.chevron_right_rounded),
+      const SizedBox(height: 12),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: AppTextField(
+              controller: minimumOrderController,
+              label: 'minimum_order'.tr,
+              keyboardType: TextInputType.number,
+              validator: Validators.wholeNumber(min: 1),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: AppTextField(
+              controller: preparationController,
+              label: 'preparation_days'.tr,
+              keyboardType: TextInputType.number,
+              validator: Validators.wholeNumber(),
+            ),
+          ),
+        ],
       ),
-    );
+      const SizedBox(height: 18),
+      BlocSelector<SupplierBloc, SupplierState, (bool, String)>(
+        selector: (state) => (state.saving, state.errorMessage),
+        builder: (context, data) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CustomButton(
+              label: existing == null ? 'save_offer'.tr : 'update_offer'.tr,
+              isLoading: data.$1,
+              onPressed: () => _saveOffer(product),
+            ),
+            InlineErrorText(message: data.$2),
+          ],
+        ),
+      ),
+    ];
   }
 }

@@ -11,8 +11,12 @@ import 'package:outmed/core/di/injection.dart';
 import 'package:outmed/core/logger/app_logger.dart';
 import 'package:outmed/core/monitoring/app_bloc_observer.dart';
 import 'package:outmed/core/monitoring/firebase_bootstrap.dart';
+import 'package:outmed/core/network/offline_queue.dart';
+import 'package:outmed/core/network/remote_cache.dart';
 import 'package:outmed/core/payments/stripe_payment_service.dart';
 import 'package:outmed/core/storage/app_database.dart';
+import 'package:outmed/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:outmed/features/auth/presentation/bloc/auth_event.dart';
 import 'package:outmed/features/catalog/data/repositories/catalog_repository_impl.dart';
 import 'package:outmed/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
@@ -46,8 +50,19 @@ Future<void> _startDeferred() async {
   if (AppEnv.isTest) return;
   try {
     final database = await AppDatabase.open();
-    await (getIt<CatalogRepository>() as CatalogRepositoryImpl).bindLocal(database);
+    await getIt<RemoteCache>().bind(database);
+    final queue = getIt<OfflineQueue>();
+    await queue.bind(database);
+    final online = ConnectivityService.instance.online;
+    online.addListener(() {
+      if (online.value) unawaited(queue.flush());
+    });
+    getIt<AuthBloc>().add(const AuthSessionRestoreRequested());
+    await (getIt<CatalogRepository>() as CatalogRepositoryImpl).bindLocal(
+      database,
+    );
     getIt<CatalogBloc>().add(const CatalogRefreshRequested());
+    unawaited(queue.flush());
     await BackgroundSync.register();
   } on Object catch (error) {
     AppLogger.log('Bootstrap: $error');

@@ -30,8 +30,15 @@ class ApiResponse<T> {
       }
       return detail.toString();
     }
-    if (body is Map && body['message'] is String) {
+    if (body is Map &&
+        body['message'] is String &&
+        (body['message'] as String).isNotEmpty) {
       return body['message'] as String;
+    }
+    if (body is Map &&
+        body['message'] is List &&
+        (body['message'] as List).isNotEmpty) {
+      return (body['message'] as List).join('\n');
     }
     return fallback;
   }

@@ -58,8 +58,11 @@ class SupplierProductCreateRequested extends SupplierEvent {
     required this.countryOfOrigin,
     required this.storageRequirements,
     required this.documentName,
-    required this.imageBytes,
+    this.imageBytes,
+    this.categoryId = '',
   });
+
+  final String categoryId;
 
   final String name;
   final String category;
@@ -72,7 +75,7 @@ class SupplierProductCreateRequested extends SupplierEvent {
   final String countryOfOrigin;
   final String storageRequirements;
   final String documentName;
-  final Uint8List imageBytes;
+  final Uint8List? imageBytes;
 
   @override
   List<Object?> get props => [name, reference];
@@ -99,6 +102,31 @@ class SupplierOfferSaveRequested extends SupplierEvent {
 
   @override
   List<Object?> get props => [product.id, price, stock, existing?.id];
+}
+
+class SupplierStatsRequested extends SupplierEvent {
+  const SupplierStatsRequested();
+}
+
+class SupplierFeedbackCleared extends SupplierEvent {
+  const SupplierFeedbackCleared();
+}
+
+class SupplierStockAdjusted extends SupplierEvent {
+  const SupplierStockAdjusted({
+    required this.offer,
+    required this.newStock,
+    required this.reason,
+    this.notes = '',
+  });
+
+  final SupplierOfferModel offer;
+  final int newStock;
+  final String reason;
+  final String notes;
+
+  @override
+  List<Object?> get props => [offer.id, newStock, reason, notes];
 }
 
 class SupplierOfferDeleteRequested extends SupplierEvent {

@@ -36,3 +36,7 @@ class CartQuantityChanged extends CartEvent {
 class CartCleared extends CartEvent {
   const CartCleared();
 }
+
+class CartSyncRequested extends CartEvent {
+  const CartSyncRequested();
+}

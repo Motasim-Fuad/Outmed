@@ -8,139 +8,90 @@ import 'package:outmed/core/router/app_nav.dart';
 import 'package:outmed/features/auth/domain/user_role.dart';
 import 'package:outmed/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:outmed/features/auth/presentation/bloc/auth_event.dart';
-import 'package:outmed/shared/widgets/app_asset_image.dart';
+import 'package:outmed/features/auth/presentation/bloc/auth_state.dart';
+import 'package:outmed/features/auth/presentation/pages/widgets/profile_type_card.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
-import 'package:outmed/shared/widgets/glossy_card.dart';
 
 class ProfileSelectionPage extends StatelessWidget {
   const ProfileSelectionPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthBloc>();
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(title: Text('select_profile'.tr)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-          child: Builder(builder: (context) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'profile_type_hint'.tr,
-                  style: const TextStyle(color: AppColors.muted),
-                ),
-                const SizedBox(height: 18),
-                Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'profile_type_hint'.tr,
+                style: const TextStyle(color: AppColors.muted),
+              ),
+              const SizedBox(height: 18),
+              BlocSelector<AuthBloc, AuthState, UserRole>(
+                selector: (state) => state.role,
+                builder: (context, role) => Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: _ProfileTypeCard(
+                      child: ProfileTypeCard(
                         title: 'healthcare_facility'.tr,
                         subtitle: 'healthcare_facility_hint'.tr,
                         image: AppAssets.healthFacility,
-                        selected: auth.state.role == UserRole.buyer,
-                        onTap: () => auth.add(const AuthRoleSelected(UserRole.buyer)),
+                        selected: role == UserRole.buyer,
+                        onTap: () => context.read<AuthBloc>().add(
+                          const AuthRoleSelected(UserRole.buyer),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _ProfileTypeCard(
+                      child: ProfileTypeCard(
                         title: 'suppliers'.tr,
                         subtitle: 'suppliers_hint'.tr,
                         image: AppAssets.supplierWarehouse,
-                        selected: auth.state.role == UserRole.supplier,
-                        onTap: () => auth.add(const AuthRoleSelected(UserRole.supplier)),
+                        selected: role == UserRole.supplier,
+                        onTap: () => context.read<AuthBloc>().add(
+                          const AuthRoleSelected(UserRole.supplier),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const Spacer(),
-                CheckboxListTile(
-                  value: auth.state.acceptedTerms,
-                  onChanged: (value) =>
-                      auth.add(AuthTermsChanged(accepted: value ?? false)),
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  activeColor: AppColors.primary,
-                  title: Text(
-                    'accept_terms'.tr,
-                    style: const TextStyle(fontSize: 13),
-                  ),
+              ),
+              const Spacer(),
+              BlocSelector<AuthBloc, AuthState, bool>(
+                selector: (state) => state.acceptedTerms,
+                builder: (context, accepted) => Column(
+                  children: [
+                    CheckboxListTile(
+                      value: accepted,
+                      onChanged: (value) => context.read<AuthBloc>().add(
+                        AuthTermsChanged(accepted: value ?? false),
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      activeColor: AppColors.primary,
+                      title: Text(
+                        'accept_terms'.tr,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    CustomButton(
+                      label: 'continue'.tr,
+                      onPressed: accepted
+                          ? () => AppNav.push(AppRoutes.registration)
+                          : null,
+                    ),
+                  ],
                 ),
-                CustomButton(
-                  label: 'continue'.tr,
-                  onPressed: auth.state.acceptedTerms
-                      ? () => AppNav.push(AppRoutes.registration)
-                      : null,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ProfileTypeCard extends StatelessWidget {
-  const _ProfileTypeCard({
-    required this.title,
-    required this.subtitle,
-    required this.image,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String title;
-  final String subtitle;
-  final String image;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GlossyCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(10),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AspectRatio(
-            aspectRatio: 1.18,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.mint,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: selected ? AppColors.primary : Colors.transparent,
-                  width: 2,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: AppAssetImage(image),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.muted, fontSize: 11),
-          ),
-        ],
       ),
     );
   }

@@ -33,7 +33,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('مرحباً بعودتك'), findsOneWidget);
-    expect(find.text('المشتري'), findsWidgets);
+    expect(find.text('تسجيل الدخول'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

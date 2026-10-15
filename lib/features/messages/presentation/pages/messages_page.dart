@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:outmed/config/routes/app_routes.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/core/constants/app_colors.dart';
 import 'package:outmed/core/l10n/tr.dart';
 import 'package:outmed/core/router/app_nav.dart';
-import 'package:outmed/shared/widgets/glossy_card.dart';
+import 'package:outmed/core/status/load_status.dart';
+import 'package:outmed/features/messages/data/models/chat_thread.dart';
+import 'package:outmed/features/messages/presentation/bloc/chat_bloc.dart';
+import 'package:outmed/features/messages/presentation/bloc/chat_event.dart';
+import 'package:outmed/features/messages/presentation/bloc/chat_state.dart';
+import 'package:outmed/features/messages/presentation/pages/widgets/conversation_list_shimmer.dart';
+import 'package:outmed/features/messages/presentation/pages/widgets/conversation_tile.dart';
+import 'package:outmed/features/messages/presentation/pages/widgets/messages_filter_chip.dart';
+import 'package:outmed/shared/widgets/inline_error_text.dart';
 
 class MessagesPage extends StatefulWidget {
   const MessagesPage({this.showBack = false, super.key});
@@ -15,187 +23,120 @@ class MessagesPage extends StatefulWidget {
 }
 
 class _MessagesPageState extends State<MessagesPage> {
-  String filter = 'all';
-
-  final conversations = const [
-    ('HealthCare Supplies', 'Typing...', '10:24', 2),
-    ('Marsh Medical', 'Yes, we can do this!', 'Yesterday', 0),
-    ('OutMed Support', 'How can we help you today?', 'Mon', 1),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    context.read<ChatBloc>().add(const ChatStarted());
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
-          children: [
-            Row(
-              children: [
-                if (widget.showBack)
-                  const IconButton(
-                    onPressed: AppNav.pop,
-                    icon: Icon(Icons.arrow_back_rounded),
-                  ),
-                Expanded(
-                  child: Text(
-                    'messages'.tr,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
+        child: RefreshIndicator(
+          onRefresh: () async =>
+              context.read<ChatBloc>().add(const ChatStarted()),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
+            children: [
+              Row(
+                children: [
+                  if (widget.showBack)
+                    const IconButton(
+                      onPressed: AppNav.pop,
+                      icon: Icon(Icons.arrow_back_rounded),
+                    ),
+                  Expanded(
+                    child: Text(
+                      'messages'.tr,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'search_messages'.tr,
-                prefixIcon: const Icon(Icons.search_rounded),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(28),
-                  borderSide: BorderSide.none,
+                ],
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                onChanged: (value) =>
+                    context.read<ChatBloc>().add(ChatSearchChanged(value)),
+                decoration: InputDecoration(
+                  hintText: 'search_messages'.tr,
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(28),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: [
-                _FilterChip(
-                  label: 'all'.tr,
-                  selected: filter == 'all',
-                  onTap: () => setState(() => filter = 'all'),
-                ),
-                _FilterChip(
-                  label: 'unread'.tr,
-                  selected: filter == 'unread',
-                  onTap: () => setState(() => filter = 'unread'),
-                ),
-                _FilterChip(
-                  label: 'order_filter'.tr,
-                  selected: filter == 'order',
-                  onTap: () => setState(() => filter = 'order'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            ...conversations
-                .where((item) {
-                  if (filter == 'unread') return item.$4 > 0;
-                  return true;
-                })
-                .map(
-                  (conversation) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: GlossyCard(
-                      onTap: () => AppNav.push(
-                        AppRoutes.chat,
-                        extra: conversation.$1,
+              const SizedBox(height: 12),
+              BlocSelector<ChatBloc, ChatState, String>(
+                selector: (state) => state.filter,
+                builder: (context, filter) => Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final (key, label) in const [
+                      ('all', 'all'),
+                      ('unread', 'unread'),
+                      ('order', 'order_filter'),
+                    ])
+                      MessagesFilterChip(
+                        label: label.tr,
+                        selected: filter == key,
+                        onTap: () => context.read<ChatBloc>().add(
+                          ChatFilterChanged(key),
+                        ),
                       ),
-                      padding: const EdgeInsets.all(13),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundColor: AppColors.primarySoft,
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              BlocSelector<
+                ChatBloc,
+                ChatState,
+                (LoadStatus, List<ChatThread>, String)
+              >(
+                selector: (state) => (
+                  state.threadsStatus,
+                  state.visibleThreads,
+                  state.errorMessage,
+                ),
+                builder: (context, data) {
+                  final (status, threads, error) = data;
+                  if (status == LoadStatus.loading && threads.isEmpty) {
+                    return const ConversationListShimmer();
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (status == LoadStatus.failure)
+                        InlineErrorText(message: error),
+                      if (threads.isEmpty && status != LoadStatus.failure)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 40),
+                          child: Center(
                             child: Text(
-                              conversation.$1.substring(0, 1),
-                              style: const TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w800,
-                              ),
+                              'no_conversations'.tr,
+                              style: const TextStyle(color: AppColors.muted),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  conversation.$1,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  conversation.$2,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: conversation.$2 == 'Typing...'
-                                        ? AppColors.primary
-                                        : AppColors.muted,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            children: [
-                              Text(
-                                conversation.$3,
-                                style: const TextStyle(
-                                  color: AppColors.muted,
-                                  fontSize: 10,
-                                ),
-                              ),
-                              if (conversation.$4 > 0) ...[
-                                const SizedBox(height: 6),
-                                CircleAvatar(
-                                  radius: 10,
-                                  backgroundColor: AppColors.primary,
-                                  child: Text(
-                                    '${conversation.$4}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-          ],
+                        ),
+                      for (final thread in threads)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: ConversationTile(thread: thread),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
-      showCheckmark: false,
-      selectedColor: AppColors.primary,
-      labelStyle: TextStyle(
-        color: selected ? Colors.white : AppColors.muted,
-        fontWeight: FontWeight.w700,
       ),
     );
   }

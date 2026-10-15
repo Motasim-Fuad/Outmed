@@ -13,7 +13,9 @@ class FirebaseBootstrap {
     try {
       await Firebase.initializeApp();
       if (kReleaseMode) {
-        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+          true,
+        );
       }
       AppLogger.log('FirebaseBootstrap: ready');
     } on Object catch (error) {

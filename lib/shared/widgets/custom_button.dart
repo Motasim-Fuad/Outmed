@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:outmed/core/constants/app_colors.dart';
+import 'package:outmed/core/l10n/tr.dart';
 
 class CustomButton extends StatelessWidget {
   const CustomButton({
@@ -19,13 +20,22 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final press = isLoading ? null : onPressed;
     final child = isLoading
-        ? const SizedBox.square(
-            dimension: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: Colors.white,
-            ),
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox.square(
+                dimension: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: outlined ? AppColors.primary : Colors.white,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text('please_wait'.tr),
+            ],
           )
         : Row(
             mainAxisSize: MainAxisSize.min,
@@ -46,10 +56,11 @@ class CustomButton extends StatelessWidget {
           );
     if (outlined) {
       return OutlinedButton(
-        onPressed: onPressed,
+        onPressed: press,
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
           foregroundColor: AppColors.primary,
+          disabledForegroundColor: isLoading ? AppColors.primary : null,
           side: const BorderSide(color: AppColors.primary),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -74,12 +85,14 @@ class CustomButton extends StatelessWidget {
         ],
       ),
       child: FilledButton(
-        onPressed: onPressed,
+        onPressed: press,
         style: FilledButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
           backgroundColor: Colors.transparent,
+          disabledBackgroundColor: isLoading ? Colors.transparent : null,
           shadowColor: Colors.transparent,
           foregroundColor: Colors.white,
+          disabledForegroundColor: isLoading ? Colors.white : null,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),

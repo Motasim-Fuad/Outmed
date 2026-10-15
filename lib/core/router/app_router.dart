@@ -13,6 +13,7 @@ import 'package:outmed/features/auth/presentation/pages/login_page.dart';
 import 'package:outmed/features/auth/presentation/pages/new_password_page.dart';
 import 'package:outmed/features/auth/presentation/pages/profile_selection_page.dart';
 import 'package:outmed/features/auth/presentation/pages/registration_page.dart';
+import 'package:outmed/features/auth/presentation/pages/sign_up_page.dart';
 import 'package:outmed/features/auth/presentation/pages/verified_page.dart';
 import 'package:outmed/features/auth/presentation/pages/verify_email_page.dart';
 import 'package:outmed/features/buyer/presentation/pages/buyer_main_page.dart';
@@ -22,12 +23,18 @@ import 'package:outmed/features/catalog/presentation/pages/product_detail_page.d
 import 'package:outmed/features/catalog/presentation/pages/supplier_profile_page.dart';
 import 'package:outmed/features/messages/presentation/pages/chat_page.dart';
 import 'package:outmed/features/messages/presentation/pages/messages_page.dart';
+import 'package:outmed/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:outmed/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:outmed/features/orders/presentation/pages/buyer_orders_page.dart';
 import 'package:outmed/features/orders/presentation/pages/order_detail_page.dart';
+import 'package:outmed/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:outmed/features/profile/presentation/pages/security_page.dart';
 import 'package:outmed/features/supplier/presentation/pages/add_offer_page.dart';
+import 'package:outmed/features/supplier/presentation/pages/supplier_inventory_page.dart';
 import 'package:outmed/features/supplier/presentation/pages/supplier_main_page.dart';
 import 'package:outmed/features/supplier/presentation/pages/update_stock_page.dart';
+import 'package:outmed/features/support/presentation/pages/help_support_page.dart';
+import 'package:outmed/features/support/presentation/pages/legal_page.dart';
 import 'package:outmed/features/system/presentation/pages/force_update_page.dart';
 import 'package:outmed/features/system/presentation/pages/maintenance_page.dart';
 
@@ -40,17 +47,20 @@ class AppRouter {
       redirect: (context, state) {
         final flags = getIt<FeatureFlagService>();
         final location = state.matchedLocation;
-        if (flags.isEnabled(FeatureKey.forceUpdate) && location != AppRoutes.forceUpdate) {
+        if (flags.isEnabled(FeatureKey.forceUpdate) &&
+            location != AppRoutes.forceUpdate) {
           return AppRoutes.forceUpdate;
         }
-        if (flags.isEnabled(FeatureKey.maintenance) && location != AppRoutes.maintenance) {
+        if (flags.isEnabled(FeatureKey.maintenance) &&
+            location != AppRoutes.maintenance) {
           return AppRoutes.maintenance;
         }
         final authenticated = getIt<AuthBloc>().state.authenticated;
         if (!authenticated && !_public.contains(location)) {
           return AppRoutes.login;
         }
-        if (!flags.isEnabled(FeatureKey.messages) && location == AppRoutes.messages) {
+        if (!flags.isEnabled(FeatureKey.messages) &&
+            location == AppRoutes.messages) {
           return AppRoutes.buyerMain;
         }
         return null;
@@ -64,6 +74,7 @@ class AppRouter {
         _route(AppRoutes.verifyEmail, const VerifyEmailPage()),
         _route(AppRoutes.newPassword, const NewPasswordPage()),
         _route(AppRoutes.verified, const VerifiedPage()),
+        _route(AppRoutes.signUp, const SignUpPage()),
         _route(AppRoutes.registration, const RegistrationPage()),
         _route(AppRoutes.buyerMain, const BuyerMainPage()),
         _route(AppRoutes.supplierMain, const SupplierMainPage()),
@@ -83,7 +94,30 @@ class AppRouter {
           path: AppRoutes.messages,
           pageBuilder: (context, state) => AppTransitionPage(
             name: AppRoutes.messages,
-            child: MessagesPage(showBack: state.uri.queryParameters['back'] == '1'),
+            child: MessagesPage(
+              showBack: state.uri.queryParameters['back'] == '1',
+            ),
+          ),
+        ),
+        GoRoute(
+          path: AppRoutes.editProfile,
+          pageBuilder: (context, state) => AppTransitionPage(
+            name: AppRoutes.editProfile,
+            child: EditProfilePage(
+              addressOnly: state.uri.queryParameters['section'] == 'address',
+            ),
+          ),
+        ),
+        _route(AppRoutes.security, const SecurityPage()),
+        _route(AppRoutes.notifications, const NotificationsPage()),
+        _route(AppRoutes.helpSupport, const HelpSupportPage()),
+        GoRoute(
+          path: AppRoutes.legal,
+          pageBuilder: (context, state) => AppTransitionPage(
+            name: AppRoutes.legal,
+            child: LegalPage(
+              type: state.uri.queryParameters['type'] ?? 'TERMS_AND_CONDITIONS',
+            ),
           ),
         ),
         _route(AppRoutes.maintenance, const MaintenancePage()),
@@ -95,7 +129,8 @@ class AppRouter {
   static GoRoute _route(String path, Widget child) {
     return GoRoute(
       path: path,
-      pageBuilder: (context, state) => AppTransitionPage(name: path, child: child),
+      pageBuilder: (context, state) =>
+          AppTransitionPage(name: path, child: child),
     );
   }
 
@@ -108,7 +143,9 @@ class AppRouter {
     AppRoutes.verifyEmail,
     AppRoutes.newPassword,
     AppRoutes.verified,
+    AppRoutes.signUp,
     AppRoutes.registration,
+    AppRoutes.legal,
     AppRoutes.maintenance,
     AppRoutes.forceUpdate,
   };

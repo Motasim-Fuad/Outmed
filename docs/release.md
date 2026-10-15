@@ -10,7 +10,7 @@ flutter run --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_...
 flutter run --dart-define=FIREBASE_ENABLED=true
 ```
 
-`APP_ENV=mock` (default) uses the local catalog and accepts any non-empty login. The Stripe secret key is never a dart-define.
+`flutter run` uses the API (`APP_ENV=dev`). Pass `--dart-define=APP_ENV=mock` for the local catalog and any non-empty login. The Stripe secret key is never a dart-define.
 
 ## Firebase (later)
 

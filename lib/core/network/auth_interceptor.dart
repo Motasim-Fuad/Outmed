@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:outmed/core/config/app_env.dart';
 import 'package:outmed/core/logger/app_logger.dart';
 import 'package:outmed/core/network/api_endpoints.dart';
+import 'package:outmed/core/network/api_json.dart';
 import 'package:outmed/core/storage/token_store.dart';
 
 class AuthInterceptor extends Interceptor {
@@ -52,20 +53,20 @@ class AuthInterceptor extends Interceptor {
   Future<void> _refresh() async {
     final refresh = tokens.refreshToken;
     if (refresh == null || refresh.isEmpty) {
-      throw StateError('missing refresh token');
+      throw Exception('missing refresh token');
     }
     final dio = Dio(BaseOptions(baseUrl: AppEnv.apiBaseUrl));
     final response = await dio.post<dynamic>(
       ApiEndpoints.refresh,
-      data: {'refresh_token': refresh},
+      data: {'refreshToken': refresh},
     );
-    final body = response.data;
-    if (body is! Map || body['access_token'] is! String) {
-      throw StateError('invalid refresh payload');
+    final access = ApiJson.accessToken(response.data);
+    if (access == null) {
+      throw Exception('invalid refresh payload');
     }
     await tokens.save(
-      access: body['access_token'] as String,
-      refresh: body['refresh_token'] as String? ?? refresh,
+      access: access,
+      refresh: ApiJson.refreshToken(response.data) ?? refresh,
     );
   }
 }

@@ -14,12 +14,14 @@ class OrderStarted extends OrderEvent {
 }
 
 class OrderPlaceRequested extends OrderEvent {
-  const OrderPlaceRequested(this.cart);
+  const OrderPlaceRequested(this.cart, {this.phone = '', this.notes = ''});
 
   final CartState cart;
+  final String phone;
+  final String notes;
 
   @override
-  List<Object?> get props => [cart.revision];
+  List<Object?> get props => [cart.revision, phone, notes];
 }
 
 class OrderBuyAgainRequested extends OrderEvent {
@@ -38,4 +40,22 @@ class OrderStatusAdvanced extends OrderEvent {
 
   @override
   List<Object?> get props => [id];
+}
+
+class OrderCancelRequested extends OrderEvent {
+  const OrderCancelRequested(this.id, {this.reason = ''});
+
+  final String id;
+  final String reason;
+
+  @override
+  List<Object?> get props => [id, reason];
+}
+
+class OrderFeedbackCleared extends OrderEvent {
+  const OrderFeedbackCleared();
+}
+
+class OrderReset extends OrderEvent {
+  const OrderReset();
 }

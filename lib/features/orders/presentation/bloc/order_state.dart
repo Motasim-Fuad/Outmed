@@ -8,6 +8,8 @@ class OrderState extends Equatable {
     this.status = LoadStatus.initial,
     this.errorMessage = '',
     this.placedOrder,
+    this.placing = false,
+    this.updatingId = '',
     this.revision = 0,
   });
 
@@ -15,7 +17,18 @@ class OrderState extends Equatable {
   final LoadStatus status;
   final String errorMessage;
   final OrderModel? placedOrder;
+  final bool placing;
+  final String updatingId;
   final int revision;
+
+  bool get loading => status == LoadStatus.loading && orders.isEmpty;
+
+  OrderModel? byId(String id) {
+    for (final order in orders) {
+      if (order.id == id) return order;
+    }
+    return null;
+  }
 
   OrderState copyWith({
     List<OrderModel>? orders,
@@ -23,6 +36,8 @@ class OrderState extends Equatable {
     String? errorMessage,
     OrderModel? placedOrder,
     bool clearPlaced = false,
+    bool? placing,
+    String? updatingId,
     int? revision,
   }) {
     return OrderState(
@@ -30,10 +45,19 @@ class OrderState extends Equatable {
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
       placedOrder: clearPlaced ? null : placedOrder ?? this.placedOrder,
+      placing: placing ?? this.placing,
+      updatingId: updatingId ?? this.updatingId,
       revision: revision ?? this.revision,
     );
   }
 
   @override
-  List<Object?> get props => [revision, status, errorMessage, placedOrder?.id];
+  List<Object?> get props => [
+    revision,
+    status,
+    errorMessage,
+    placedOrder?.id,
+    placing,
+    updatingId,
+  ];
 }

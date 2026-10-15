@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -28,6 +29,16 @@ class AppAssetImage extends StatelessWidget {
         height: height,
         fit: fit,
         filterQuality: FilterQuality.high,
+      );
+    }
+    if (asset.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: asset,
+        width: width,
+        height: height,
+        fit: fit,
+        errorWidget: (context, url, error) =>
+            Icon(Icons.image_not_supported_outlined, size: height),
       );
     }
     if (asset.toLowerCase().endsWith('.svg')) {

@@ -7,6 +7,7 @@ abstract final class AppRoutes {
   static const verifyEmail = '/verify-email';
   static const newPassword = '/new-password';
   static const verified = '/verified';
+  static const signUp = '/sign-up';
   static const registration = '/registration';
   static const buyerMain = '/buyer';
   static const supplierMain = '/supplier';
@@ -23,6 +24,11 @@ abstract final class AppRoutes {
   static const chat = '/chat';
   static const updateStock = '/update-stock';
   static const messages = '/messages';
+  static const editProfile = '/edit-profile';
+  static const security = '/security';
+  static const notifications = '/notifications';
+  static const helpSupport = '/help-support';
+  static const legal = '/legal';
   static const maintenance = '/maintenance';
   static const forceUpdate = '/force-update';
 }

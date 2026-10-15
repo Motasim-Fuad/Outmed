@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/config/routes/app_routes.dart';
 import 'package:outmed/core/constants/app_colors.dart';
 import 'package:outmed/core/l10n/tr.dart';
 import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/core/validation/validators.dart';
+import 'package:outmed/features/auth/domain/user_role.dart';
+import 'package:outmed/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:outmed/features/auth/presentation/bloc/auth_event.dart';
+import 'package:outmed/features/auth/presentation/bloc/auth_state.dart';
+import 'package:outmed/features/auth/presentation/widgets/auth_submit_button.dart';
 import 'package:outmed/shared/widgets/app_text_field.dart';
 import 'package:outmed/shared/widgets/custom_button.dart';
 
@@ -14,8 +21,19 @@ class RegistrationPage extends StatefulWidget {
 }
 
 class _RegistrationPageState extends State<RegistrationPage> {
-  final List<TextEditingController> controllers = List.generate(14, (_) => TextEditingController());
+  final List<TextEditingController> controllers = List.generate(
+    14,
+    (_) => TextEditingController(),
+  );
+  final formKey = GlobalKey<FormState>();
   int step = 0;
+  String companyType = 'Manufacturer';
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<AuthBloc>().add(const AuthFeedbackCleared());
+  }
 
   @override
   void dispose() {
@@ -27,107 +45,184 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(
-          step == 0 ? 'organization_information'.tr : 'business_address'.tr,
+    final supplier = context.read<AuthBloc>().state.role == UserRole.supplier;
+    return BlocListener<AuthBloc, AuthState>(
+      listenWhen: (previous, current) =>
+          !previous.accountCreated && current.accountCreated,
+      listener: (context, state) {
+        AppNav.go(
+          state.authenticated
+              ? (state.role == UserRole.supplier
+                    ? AppRoutes.supplierMain
+                    : AppRoutes.buyerMain)
+              : AppRoutes.login,
+        );
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: Text(
+            step == 0 ? 'organization_information'.tr : 'business_address'.tr,
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          children: [
-            _StepBar(current: step),
-            const SizedBox(height: 18),
-            if (step == 0) ...[
-              AppTextField(
-                controller: controllers[0],
-                label: 'company_name'.tr,
-              ),
-              const SizedBox(height: 12),
-              AppTextField(
-                controller: controllers[1],
-                label: 'company_type'.tr,
-              ),
-              const SizedBox(height: 12),
-              AppTextField(
-                controller: controllers[2],
-                label: 'commercial_registration'.tr,
-              ),
-              const SizedBox(height: 12),
-              AppTextField(controller: controllers[3], label: 'vat_number'.tr),
-              const SizedBox(height: 12),
-              AppTextField(controller: controllers[4], label: 'bank_name'.tr),
-              const SizedBox(height: 12),
-              AppTextField(
-                controller: controllers[5],
-                label: 'bank_account_holder'.tr,
-              ),
-              const SizedBox(height: 12),
-              AppTextField(controller: controllers[6], label: 'iban'.tr),
-              const SizedBox(height: 12),
-              AppTextField(
-                controller: controllers[7],
-                label: 'year_established'.tr,
-              ),
-              const SizedBox(height: 12),
-              AppTextField(
-                controller: controllers[8],
-                label: 'number_employees'.tr,
-              ),
-              const SizedBox(height: 12),
-              AppTextField(
-                controller: controllers[9],
-                label: 'company_website'.tr,
-              ),
-            ] else ...[
-              AppTextField(controller: controllers[10], label: 'country'.tr),
-              const SizedBox(height: 12),
-              AppTextField(controller: controllers[11], label: 'city'.tr),
-              const SizedBox(height: 12),
-              AppTextField(controller: controllers[12], label: 'region'.tr),
-              const SizedBox(height: 12),
-              AppTextField(
-                controller: controllers[13],
-                label: 'full_address'.tr,
-                maxLines: 3,
-              ),
-            ],
-            const SizedBox(height: 22),
-            Row(
+        body: SafeArea(
+          child: Form(
+            key: formKey,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
               children: [
-                if (step > 0) ...[
-                  Expanded(
-                    child: CustomButton(
-                      label: 'back'.tr,
-                      outlined: true,
-                      onPressed: () => setState(() => step = 0),
+                _StepBar(current: step),
+                const SizedBox(height: 18),
+                if (step == 0) ...[
+                  AppTextField(
+                    controller: controllers[0],
+                    label: 'company_name'.tr,
+                    validator: Validators.required,
+                  ),
+                  const SizedBox(height: 12),
+                  if (supplier) ...[
+                    DropdownButtonFormField<String>(
+                      initialValue: companyType,
+                      decoration: InputDecoration(labelText: 'company_type'.tr),
+                      items: [
+                        for (final type in _companyTypes)
+                          DropdownMenuItem(value: type, child: Text(type)),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => companyType = value ?? companyType),
                     ),
+                    const SizedBox(height: 12),
+                  ],
+                  AppTextField(
+                    controller: controllers[2],
+                    label: 'commercial_registration'.tr,
+                    validator: Validators.required,
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: controllers[3],
+                    label: 'vat_number'.tr,
+                    hint: supplier ? null : 'optional'.tr,
+                    validator: supplier ? Validators.required : null,
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: controllers[4],
+                    label: 'bank_name'.tr,
+                    validator: Validators.required,
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: controllers[5],
+                    label: 'bank_account_holder'.tr,
+                    validator: Validators.required,
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: controllers[6],
+                    label: 'iban'.tr,
+                    validator: Validators.required,
+                  ),
+                  if (supplier) ...[
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: controllers[7],
+                      label: 'year_established'.tr,
+                      keyboardType: TextInputType.number,
+                      validator: Validators.year,
+                    ),
+                    const SizedBox(height: 12),
+                    AppTextField(
+                      controller: controllers[8],
+                      label: 'number_employees'.tr,
+                      hint: 'optional'.tr,
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: controllers[9],
+                    label: 'company_website'.tr,
+                    hint: 'optional'.tr,
+                    keyboardType: TextInputType.url,
+                    validator: Validators.optionalWebsite,
+                  ),
+                ] else ...[
+                  AppTextField(
+                    controller: controllers[10],
+                    label: 'country'.tr,
+                    validator: Validators.required,
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: controllers[11],
+                    label: 'city'.tr,
+                    validator: Validators.required,
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: controllers[12],
+                    label: 'postal_code'.tr,
+                    validator: Validators.required,
+                  ),
+                  const SizedBox(height: 12),
+                  AppTextField(
+                    controller: controllers[13],
+                    label: 'full_address'.tr,
+                    maxLines: 3,
+                    validator: Validators.required,
+                  ),
                 ],
-                Expanded(
-                  child: CustomButton(
-                    label: step == 0 ? 'next'.tr : 'submit_registration'.tr,
-                    onPressed: () {
-                      if (step == 0) {
-                        setState(() => step = 1);
-                        return;
-                      }
-                      AppNav.go(AppRoutes.login);
-
-                    },
+                const SizedBox(height: 22),
+                if (step > 0) ...[
+                  CustomButton(
+                    label: 'back'.tr,
+                    outlined: true,
+                    onPressed: () => setState(() => step = 0),
                   ),
+                  const SizedBox(height: 10),
+                ],
+                AuthSubmitButton(
+                  label: step == 0 ? 'next'.tr : 'submit_registration'.tr,
+                  onPressed: _continue,
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
+
+  void _continue() {
+    if (!(formKey.currentState?.validate() ?? false)) return;
+    if (step == 0) {
+      setState(() => step = 1);
+      return;
+    }
+    final auth = context.read<AuthBloc>();
+    auth.add(
+      AuthRegisterRequested({
+        'company_name': controllers[0].text.trim(),
+        'company_type': companyType,
+        'commercial_registration': controllers[2].text.trim(),
+        'vat_number': controllers[3].text.trim(),
+        'bank_name': controllers[4].text.trim(),
+        'bank_account_holder': controllers[5].text.trim(),
+        'iban': controllers[6].text.trim(),
+        'year_established': controllers[7].text.trim(),
+        'number_of_employees': controllers[8].text.trim(),
+        'website': controllers[9].text.trim(),
+        'country': controllers[10].text.trim(),
+        'city': controllers[11].text.trim(),
+        'postal_code': controllers[12].text.trim(),
+        'address': controllers[13].text.trim(),
+        'role': auth.state.role.name,
+      }),
+    );
+  }
 }
+
+const _companyTypes = ['Manufacturer', 'Distributor', 'Wholesaler'];
 
 class _StepBar extends StatelessWidget {
   const _StepBar({required this.current});

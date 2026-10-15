@@ -3,7 +3,12 @@ import 'package:outmed/core/constants/app_colors.dart';
 import 'package:shimmer/shimmer.dart';
 
 class ShimmerBox extends StatelessWidget {
-  const ShimmerBox({required this.height, this.width, this.radius = 12, super.key});
+  const ShimmerBox({
+    required this.height,
+    this.width,
+    this.radius = 12,
+    super.key,
+  });
 
   final double height;
   final double? width;

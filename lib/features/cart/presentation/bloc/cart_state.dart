@@ -14,7 +14,10 @@ class CartState extends Equatable {
   int get itemCount => items.fold(0, (sum, item) => sum + item.quantity);
 
   CartState copyWith({List<CartItem>? items, int? revision}) {
-    return CartState(items: items ?? this.items, revision: revision ?? this.revision);
+    return CartState(
+      items: items ?? this.items,
+      revision: revision ?? this.revision,
+    );
   }
 
   @override

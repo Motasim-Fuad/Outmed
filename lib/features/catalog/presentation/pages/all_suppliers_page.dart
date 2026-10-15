@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:outmed/config/routes/app_routes.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:outmed/core/constants/app_colors.dart';
 import 'package:outmed/core/l10n/tr.dart';
-import 'package:outmed/core/router/app_nav.dart';
+import 'package:outmed/core/status/load_status.dart';
 import 'package:outmed/features/catalog/data/models/marketplace_supplier.dart';
-import 'package:outmed/shared/widgets/app_asset_image.dart';
-import 'package:outmed/shared/widgets/glossy_card.dart';
+import 'package:outmed/features/catalog/presentation/bloc/supplier_directory_bloc.dart';
+import 'package:outmed/features/catalog/presentation/bloc/supplier_directory_event.dart';
+import 'package:outmed/features/catalog/presentation/bloc/supplier_directory_state.dart';
+import 'package:outmed/features/catalog/presentation/pages/widgets/supplier_list_shimmer.dart';
+import 'package:outmed/features/catalog/presentation/pages/widgets/supplier_tile.dart';
+import 'package:outmed/shared/widgets/inline_error_text.dart';
 
 class AllSuppliersPage extends StatelessWidget {
   const AllSuppliersPage({super.key});
@@ -15,49 +19,75 @@ class AllSuppliersPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(title: Text('top_suppliers'.tr)),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(18),
-        itemCount: MarketplaceSupplier.all.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final supplier = MarketplaceSupplier.all[index];
-          return GlossyCard(
-            onTap: () =>
-                AppNav.push(AppRoutes.supplierProfile, extra: supplier),
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 64,
-                  height: 64,
-                  child: AppAssetImage(supplier.logo),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+            child: TextField(
+              onChanged: (value) => context.read<SupplierDirectoryBloc>().add(
+                SupplierDirectorySearchChanged(value),
+              ),
+              decoration: InputDecoration(
+                hintText: 'search_suppliers'.tr,
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        supplier.name,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'verified_supplier'.tr,
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.star_rounded, color: AppColors.warning),
-                Text(supplier.rating),
-              ],
+              ),
             ),
-          );
-        },
+          ),
+          Expanded(
+            child:
+                BlocSelector<
+                  SupplierDirectoryBloc,
+                  SupplierDirectoryState,
+                  (LoadStatus, List<MarketplaceSupplier>, String)
+                >(
+                  selector: (state) =>
+                      (state.status, state.visible, state.errorMessage),
+                  builder: (context, data) {
+                    final (status, suppliers, error) = data;
+                    if (status == LoadStatus.loading && suppliers.isEmpty) {
+                      return const SupplierListShimmer();
+                    }
+                    return RefreshIndicator(
+                      onRefresh: () async => context
+                          .read<SupplierDirectoryBloc>()
+                          .add(const SupplierDirectoryStarted()),
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(18),
+                        itemCount: suppliers.length + 1,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          if (index == 0) {
+                            if (suppliers.isEmpty) {
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 40),
+                                child: Center(
+                                  child: Text(
+                                    'no_suppliers'.tr,
+                                    style: const TextStyle(
+                                      color: AppColors.muted,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                            return status == LoadStatus.failure
+                                ? InlineErrorText(message: error)
+                                : const SizedBox.shrink();
+                          }
+                          return SupplierTile(supplier: suppliers[index - 1]);
+                        },
+                      ),
+                    );
+                  },
+                ),
+          ),
+        ],
       ),
     );
   }

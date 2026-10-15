@@ -49,7 +49,7 @@ class AuthLandingPage extends StatelessWidget {
                 icon: Icons.email_outlined,
                 color: AppColors.accent,
                 label: 'sign_up_email'.tr,
-                onTap: () => AppNav.push(AppRoutes.profileSelection),
+                onTap: () => AppNav.push(AppRoutes.signUp),
               ),
               const SizedBox(height: 10),
               _SocialButton(

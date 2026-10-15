@@ -91,15 +91,15 @@ flutter pub get
 flutter run
 ```
 
-Demo login accepts any non-empty email and password and uses the buyer / supplier switch on the login screen. The default environment is `mock`.
-
-To call the API the backend shared:
+`flutter run` calls the API (`APP_ENV=dev`): login, registration, products, offers, and orders. If the host is down, the catalog stays on the last local copy and login shows an error under the button.
 
 ```bash
-flutter run --dart-define=APP_ENV=dev --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_replace_me
+flutter run --dart-define=APP_ENV=mock
+flutter run --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_replace_me
+flutter run --dart-define=API_BASE_URL=https://your-host
 ```
 
-Optional base URL override: `--dart-define=API_BASE_URL=https://your-host`. Docs: `https://<host>/api/docs`.
+Docs: `https://<host>/api/docs`.
 
 Firebase stays off until you pass `--dart-define=FIREBASE_ENABLED=true` and add the platform config files. See `docs/release.md` and `docs/adr/0001-bloc-sqlite-dio.md`.
 

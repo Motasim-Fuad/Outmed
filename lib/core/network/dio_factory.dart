@@ -19,7 +19,9 @@ class DioFactory {
         headers: const {'Accept': 'application/json'},
       ),
     );
-    dio.interceptors.add(AuthInterceptor(tokens: tokens, onRefreshFailed: onRefreshFailed));
+    dio.interceptors.add(
+      AuthInterceptor(tokens: tokens, onRefreshFailed: onRefreshFailed),
+    );
     dio.interceptors.add(RetryInterceptor(dio));
     if (kDebugMode) {
       dio.interceptors.add(
