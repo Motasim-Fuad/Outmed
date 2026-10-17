@@ -12,6 +12,7 @@ import 'package:outmed/features/messages/presentation/bloc/chat_event.dart';
 import 'package:outmed/features/messages/presentation/bloc/chat_state.dart';
 import 'package:outmed/features/messages/presentation/pages/widgets/chat_bubble.dart';
 import 'package:outmed/features/messages/presentation/pages/widgets/chat_shimmer.dart';
+import 'package:outmed/features/messages/presentation/pages/widgets/chat_typing_label.dart';
 import 'package:outmed/shared/widgets/inline_error_text.dart';
 
 class ChatPage extends StatefulWidget {
@@ -25,6 +26,12 @@ class _ChatPageState extends State<ChatPage> {
   final controller = TextEditingController();
   var _fallbackTitle = '';
   var _opened = false;
+
+  @override
+  void initState() {
+    super.initState();
+    controller.addListener(_onTyped);
+  }
 
   @override
   void didChangeDependencies() {
@@ -49,14 +56,24 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
-    controller.dispose();
+    controller
+      ..removeListener(_onTyped)
+      ..dispose();
     super.dispose();
+  }
+
+  void _onTyped() {
+    context.read<ChatBloc>().add(
+      ChatTypingChanged(isTyping: controller.text.trim().isNotEmpty),
+    );
   }
 
   void _send() {
     final text = controller.text.trim();
     if (text.isEmpty) return;
-    context.read<ChatBloc>().add(ChatMessageSent(text));
+    context.read<ChatBloc>()
+      ..add(const ChatTypingChanged(isTyping: false))
+      ..add(ChatMessageSent(text));
     controller.clear();
   }
 
@@ -81,11 +98,15 @@ class _ChatPageState extends State<ChatPage> {
                 BlocSelector<
                   ChatBloc,
                   ChatState,
-                  (LoadStatus, List<ChatMessage>)
+                  (LoadStatus, List<ChatMessage>, bool)
                 >(
-                  selector: (state) => (state.messagesStatus, state.messages),
+                  selector: (state) => (
+                    state.messagesStatus,
+                    state.messages,
+                    state.peerRead,
+                  ),
                   builder: (context, data) {
-                    final (status, messages) = data;
+                    final (status, messages, peerRead) = data;
                     if (status == LoadStatus.loading && messages.isEmpty) {
                       return const ChatShimmer();
                     }
@@ -97,13 +118,23 @@ class _ChatPageState extends State<ChatPage> {
                         ),
                       );
                     }
+                    final lastMine = messages.lastIndexWhere(
+                      (message) => message.mine && !message.pending,
+                    );
                     return ListView.builder(
                       reverse: true,
                       padding: const EdgeInsets.all(16),
                       itemCount: messages.length,
-                      itemBuilder: (context, index) => ChatBubble(
-                        message: messages[messages.length - 1 - index],
-                      ),
+                      itemBuilder: (context, index) {
+                        final message = messages[messages.length - 1 - index];
+                        return ChatBubble(
+                          message: message,
+                          seen:
+                              lastMine >= 0 &&
+                              message.id == messages[lastMine].id &&
+                              peerRead,
+                        );
+                      },
                     );
                   },
                 ),
@@ -115,6 +146,7 @@ class _ChatPageState extends State<ChatPage> {
               child: InlineErrorText(message: error),
             ),
           ),
+          const ChatTypingLabel(),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),

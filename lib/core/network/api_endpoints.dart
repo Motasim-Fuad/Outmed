@@ -19,6 +19,7 @@ abstract final class ApiEndpoints {
   static const products = '/api/v1/products';
   static const featuredProducts = '/api/v1/products/featured';
   static const categories = '/api/v1/categories/all';
+  static const categoryTree = '/api/v1/categories';
   static const supplierProducts = '/api/v1/supplier/products';
   static const cartItems = '/api/v1/cart/items';
   static const checkout = '/api/v1/checkout';

@@ -116,6 +116,7 @@ const Map<String, String> arSa = {
   'mark_delivered': 'تأكيد التسليم',
   'new_message': 'رسالة جديدة',
   'type_message': 'اكتب رسالة',
+  'typing_now': 'يكتب…',
   'account': 'الحساب',
   'company_profile': 'ملف الشركة',
   'addresses': 'العناوين',

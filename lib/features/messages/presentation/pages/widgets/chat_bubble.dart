@@ -4,9 +4,10 @@ import 'package:outmed/core/extensions/date_label.dart';
 import 'package:outmed/features/messages/data/models/chat_message.dart';
 
 class ChatBubble extends StatelessWidget {
-  const ChatBubble({required this.message, super.key});
+  const ChatBubble({required this.message, this.seen = false, super.key});
 
   final ChatMessage message;
+  final bool seen;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +50,13 @@ class ChatBubble extends StatelessWidget {
                   if (message.pending) ...[
                     const SizedBox(width: 4),
                     Icon(Icons.schedule_rounded, size: 12, color: meta),
+                  ] else if (mine) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      seen ? Icons.done_all_rounded : Icons.done_rounded,
+                      size: 12,
+                      color: meta,
+                    ),
                   ],
                 ],
               ),

@@ -23,4 +23,23 @@ void main() {
     expect(categories.first.productCount, 3);
     expect(categories.last.isRoot, isFalse);
   });
+
+  test('fills parentId from tree children when the API omits it', () {
+    final categories = CategoryOption.parseList({
+      'data': [
+        {
+          'id': 'ppe',
+          'name': 'PPE',
+          'children': [
+            {'id': 'gloves', 'name': 'Gloves'},
+          ],
+        },
+      ],
+    });
+
+    expect(
+      categories.singleWhere((item) => item.id == 'gloves').parentId,
+      'ppe',
+    );
+  });
 }

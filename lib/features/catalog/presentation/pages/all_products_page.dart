@@ -164,7 +164,7 @@ class _AllProductsPageState extends State<AllProductsPage> {
                             crossAxisCount: 2,
                             crossAxisSpacing: 10,
                             mainAxisSpacing: 10,
-                            childAspectRatio: .70,
+                            mainAxisExtent: 268,
                           ),
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final product = products[index];

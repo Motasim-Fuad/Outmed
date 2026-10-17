@@ -38,8 +38,9 @@ class RemoteCache {
       }
       return body;
     } on DioException catch (error) {
-      if (error.response == null && _memory.containsKey(key)) {
-        AppLogger.log('RemoteCache: offline hit $key');
+      final code = error.response?.statusCode ?? 0;
+      if (_memory.containsKey(key) && (error.response == null || code >= 500)) {
+        AppLogger.log('RemoteCache: stale hit $key');
         return _memory[key];
       }
       rethrow;

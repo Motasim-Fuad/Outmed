@@ -118,6 +118,7 @@ const Map<String, String> enUs = {
   'mark_delivered': 'Mark delivered',
   'new_message': 'New message',
   'type_message': 'Type a message',
+  'typing_now': 'Typing…',
   'account': 'Account',
   'company_profile': 'Company profile',
   'addresses': 'Addresses',

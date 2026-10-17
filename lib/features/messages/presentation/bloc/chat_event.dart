@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:outmed/features/messages/data/models/chat_lookup.dart';
+import 'package:outmed/features/messages/data/models/chat_realtime_event.dart';
 import 'package:outmed/features/messages/data/models/chat_thread.dart';
 
 sealed class ChatEvent extends Equatable {
@@ -56,6 +57,24 @@ class ChatMessageSent extends ChatEvent {
 
   @override
   List<Object?> get props => [text];
+}
+
+class ChatTypingChanged extends ChatEvent {
+  const ChatTypingChanged({required this.isTyping});
+
+  final bool isTyping;
+
+  @override
+  List<Object?> get props => [isTyping];
+}
+
+class ChatRealtimeReceived extends ChatEvent {
+  const ChatRealtimeReceived(this.event);
+
+  final ChatRealtimeEvent event;
+
+  @override
+  List<Object?> get props => [event];
 }
 
 class ChatReset extends ChatEvent {

@@ -32,7 +32,8 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
       return;
     }
     final cached = CategoryOption.parseList(
-      _cache.peek(ApiEndpoints.categories),
+      _cache.peek(ApiEndpoints.categories) ??
+          _cache.peek(ApiEndpoints.categoryTree),
     );
     emit(
       state.copyWith(
@@ -42,7 +43,7 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
       ),
     );
     try {
-      final body = await _cache.get(ApiEndpoints.categories);
+      final body = await _load();
       emit(
         state.copyWith(
           categories: CategoryOption.parseList(body),
@@ -56,6 +57,14 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
           errorMessage: ApiError.message(error),
         ),
       );
+    }
+  }
+
+  Future<Object?> _load() async {
+    try {
+      return await _cache.get(ApiEndpoints.categories);
+    } on Object catch (_) {
+      return _cache.get(ApiEndpoints.categoryTree);
     }
   }
 }

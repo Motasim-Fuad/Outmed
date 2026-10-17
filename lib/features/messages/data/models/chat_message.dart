@@ -37,6 +37,16 @@ class ChatMessage extends Equatable {
     );
   }
 
+  ChatMessage copyWith({String? id, bool? pending, DateTime? sentAt}) {
+    return ChatMessage(
+      id: id ?? this.id,
+      content: content,
+      mine: mine,
+      sentAt: sentAt ?? this.sentAt,
+      pending: pending ?? this.pending,
+    );
+  }
+
   @override
   List<Object?> get props => [id, content, mine, sentAt, pending];
 }

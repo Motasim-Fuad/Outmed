@@ -6,6 +6,7 @@ import 'package:outmed/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:outmed/features/cart/presentation/bloc/cart_state.dart';
 import 'package:outmed/features/catalog/data/models/product_model.dart';
 import 'package:outmed/shared/widgets/app_asset_image.dart';
+import 'package:outmed/shared/widgets/cart_add_button.dart';
 import 'package:outmed/shared/widgets/price_tag.dart';
 
 class ProductCard extends StatelessWidget {
@@ -42,7 +43,8 @@ class ProductCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
+              AspectRatio(
+                aspectRatio: 1.15,
                 child: Stack(
                   children: [
                     Positioned.fill(
@@ -64,11 +66,11 @@ class ProductCard extends StatelessWidget {
                       top: 6,
                       end: 6,
                       child: CircleAvatar(
-                        radius: 13,
+                        radius: 12,
                         backgroundColor: Colors.white,
                         child: Icon(
                           Icons.favorite_border_rounded,
-                          size: 16,
+                          size: 14,
                           color: AppColors.muted,
                         ),
                       ),
@@ -107,7 +109,7 @@ class ProductCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(color: AppColors.muted, fontSize: 10),
               ),
-              const SizedBox(height: 6),
+              const Spacer(),
               Row(
                 children: [
                   Container(
@@ -132,26 +134,9 @@ class ProductCard extends StatelessWidget {
                     BlocSelector<CartBloc, CartState, int>(
                       selector: (state) =>
                           offer == null ? 0 : state.quantityOf(offer!.id),
-                      builder: (context, inCart) => GestureDetector(
-                        onTap: onAdd,
-                        child: Badge(
-                          isLabelVisible: inCart > 0,
-                          label: Text('$inCart'),
-                          backgroundColor: AppColors.primaryDark,
-                          child: CircleAvatar(
-                            radius: 13,
-                            backgroundColor: inCart > 0
-                                ? AppColors.success
-                                : AppColors.primary,
-                            child: Icon(
-                              inCart > 0
-                                  ? Icons.check_rounded
-                                  : Icons.add_rounded,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
+                      builder: (context, inCart) => CartAddButton(
+                        count: inCart,
+                        onTap: onAdd!,
                       ),
                     ),
                 ],

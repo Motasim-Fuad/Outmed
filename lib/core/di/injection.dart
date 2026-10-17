@@ -22,6 +22,7 @@ import 'package:outmed/features/catalog/presentation/bloc/catalog_bloc.dart';
 import 'package:outmed/features/catalog/presentation/bloc/category_bloc.dart';
 import 'package:outmed/features/catalog/presentation/bloc/category_event.dart';
 import 'package:outmed/features/catalog/presentation/bloc/supplier_directory_bloc.dart';
+import 'package:outmed/features/messages/data/chat_socket.dart';
 import 'package:outmed/features/messages/presentation/bloc/chat_bloc.dart';
 import 'package:outmed/features/notifications/presentation/bloc/notification_bloc.dart';
 import 'package:outmed/features/orders/presentation/bloc/order_bloc.dart';
@@ -100,8 +101,9 @@ class AppScope {
       ..registerLazySingleton<SupplierDirectoryBloc>(
         () => SupplierDirectoryBloc(cache),
       )
+      ..registerLazySingleton<ChatSocket>(ChatSocket.new)
       ..registerLazySingleton<ChatBloc>(
-        () => ChatBloc(dio, cache, queue, tokens),
+        () => ChatBloc(dio, cache, queue, tokens, getIt<ChatSocket>()),
       )
       ..registerLazySingleton<ProfileBloc>(
         () => ProfileBloc(dio, cache, getIt<AuthBloc>()),

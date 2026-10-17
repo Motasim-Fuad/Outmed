@@ -13,6 +13,8 @@ class ChatState extends Equatable {
     this.messages = const [],
     this.messagesStatus = LoadStatus.initial,
     this.sending = false,
+    this.peerTyping = false,
+    this.peerRead = false,
     this.errorMessage = '',
   });
 
@@ -24,6 +26,8 @@ class ChatState extends Equatable {
   final List<ChatMessage> messages;
   final LoadStatus messagesStatus;
   final bool sending;
+  final bool peerTyping;
+  final bool peerRead;
   final String errorMessage;
 
   List<ChatThread> get visibleThreads {
@@ -51,6 +55,8 @@ class ChatState extends Equatable {
     List<ChatMessage>? messages,
     LoadStatus? messagesStatus,
     bool? sending,
+    bool? peerTyping,
+    bool? peerRead,
     String? errorMessage,
   }) {
     return ChatState(
@@ -62,6 +68,8 @@ class ChatState extends Equatable {
       messages: messages ?? this.messages,
       messagesStatus: messagesStatus ?? this.messagesStatus,
       sending: sending ?? this.sending,
+      peerTyping: peerTyping ?? this.peerTyping,
+      peerRead: peerRead ?? this.peerRead,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -76,6 +84,8 @@ class ChatState extends Equatable {
     messages,
     messagesStatus,
     sending,
+    peerTyping,
+    peerRead,
     errorMessage,
   ];
 }

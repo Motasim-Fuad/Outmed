@@ -48,7 +48,7 @@ class BuyerHome extends StatelessWidget {
             return RefreshIndicator(
               onRefresh: () => _refresh(context),
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 110),
                 children: [
                   const BuyerGreeting(),
                   const SizedBox(height: 16),

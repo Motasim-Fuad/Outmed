@@ -11,13 +11,15 @@ import 'package:outmed/core/network/offline_queue.dart';
 import 'package:outmed/core/network/remote_cache.dart';
 import 'package:outmed/core/status/load_status.dart';
 import 'package:outmed/core/storage/token_store.dart';
+import 'package:outmed/features/messages/data/chat_socket.dart';
 import 'package:outmed/features/messages/data/models/chat_message.dart';
+import 'package:outmed/features/messages/data/models/chat_realtime_event.dart';
 import 'package:outmed/features/messages/data/models/chat_thread.dart';
 import 'package:outmed/features/messages/presentation/bloc/chat_event.dart';
 import 'package:outmed/features/messages/presentation/bloc/chat_state.dart';
 
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
-  ChatBloc(this._dio, this._cache, this._queue, this._tokens)
+  ChatBloc(this._dio, this._cache, this._queue, this._tokens, this._socket)
     : super(const ChatState()) {
     on<ChatStarted>(_onStarted);
     on<ChatFilterChanged>(
@@ -29,7 +31,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<ChatThreadOpened>(_onOpened);
     on<ChatNotificationOpened>(_onNotificationOpened);
     on<ChatMessageSent>(_onSent);
-    on<ChatReset>((event, emit) => emit(const ChatState()));
+    on<ChatTypingChanged>(_onTyping);
+    on<ChatRealtimeReceived>(_onRealtime);
+    on<ChatReset>(_onReset);
+    _socketSub = _socket.events.listen((event) {
+      if (!isClosed) add(ChatRealtimeReceived(event));
+    });
   }
 
   static const _messagesQuery = {'page': 1, 'limit': 30};
@@ -38,6 +45,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final RemoteCache _cache;
   final OfflineQueue _queue;
   final TokenStore _tokens;
+  final ChatSocket _socket;
+  StreamSubscription<ChatRealtimeEvent>? _socketSub;
+  Timer? _typing;
+  var _announcedTyping = false;
 
   Future<void> _onStarted(ChatStarted event, Emitter<ChatState> emit) async {
     if (!AppEnv.useRemote) {
@@ -49,6 +60,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       );
       return;
     }
+    _socket.connect(_tokens.accessToken ?? '');
     final cached = _threads(_cache.peek(ApiEndpoints.conversations));
     emit(
       state.copyWith(
@@ -59,14 +71,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         errorMessage: '',
       ),
     );
+    _joinAll(cached);
     try {
       final body = await _cache.get(ApiEndpoints.conversations);
+      final threads = _threads(body);
       emit(
-        state.copyWith(
-          threads: _threads(body),
-          threadsStatus: LoadStatus.success,
-        ),
+        state.copyWith(threads: threads, threadsStatus: LoadStatus.success),
       );
+      _joinAll(threads);
     } on Object catch (error) {
       emit(
         state.copyWith(
@@ -133,6 +145,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           ],
         ),
       );
+      unawaited(_socket.join(thread.id));
+      unawaited(_socket.markRead(thread.id));
       if (thread.unread > 0) {
         unawaited(
           _queue
@@ -176,6 +190,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         emit(
           state.copyWith(threads: threads, threadsStatus: LoadStatus.success),
         );
+        _joinAll(threads);
       } on Object catch (_) {
         threads = state.threads.isNotEmpty
             ? state.threads
@@ -254,38 +269,28 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       emit(state.copyWith(sending: false));
       return;
     }
+    _socket.typing(conversationId: thread.id, isTyping: false);
     try {
-      final body = await _queue.send(
-        'POST',
-        ApiEndpoints.chatMessages,
-        body: {'conversationId': thread.id, 'content': text},
-      );
-      final json = ApiJson.asMap(ApiJson.unwrap(body));
+      final json = await _deliver(thread.id, text);
       final saved = json == null
           ? null
           : ChatMessage.tryParse(json, _tokens.userId);
       emit(
         state.copyWith(
           sending: false,
+          peerRead: false,
           messages: saved == null
               ? null
-              : [
-                  for (final message in state.messages)
-                    message.id == local.id
-                        ? ChatMessage(
-                            id: saved.id,
-                            content: saved.content,
-                            mine: true,
-                            sentAt: saved.sentAt,
-                          )
-                        : message,
-                ],
-          threads: [
-            for (final item in state.threads)
-              item.id == thread.id
-                  ? item.copyWith(preview: text, updatedAt: DateTime.now())
-                  : item,
-          ],
+              : _mergeMessage(
+                  ChatMessage(
+                    id: saved.id,
+                    content: saved.content,
+                    mine: true,
+                    sentAt: saved.sentAt,
+                  ),
+                  pendingId: local.id,
+                ),
+          threads: _touchThread(thread.id, preview: text, unread: 0),
         ),
       );
     } on Object catch (error) {
@@ -314,6 +319,174 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             return right.compareTo(left);
           });
     return threads;
+  }
+
+  Future<void> _onTyping(
+    ChatTypingChanged event,
+    Emitter<ChatState> emit,
+  ) async {
+    final id = state.active?.id ?? '';
+    if (id.isEmpty) return;
+    _typing?.cancel();
+    if (event.isTyping) {
+      if (!_announcedTyping) {
+        _announcedTyping = true;
+        _socket.typing(conversationId: id, isTyping: true);
+      }
+      _typing = Timer(const Duration(seconds: 2), () {
+        _announcedTyping = false;
+        _socket.typing(conversationId: id, isTyping: false);
+      });
+      return;
+    }
+    _announcedTyping = false;
+    _socket.typing(conversationId: id, isTyping: false);
+  }
+
+  Future<void> _onRealtime(
+    ChatRealtimeReceived event,
+    Emitter<ChatState> emit,
+  ) async {
+    final payload = event.event;
+    switch (payload) {
+      case ChatRealtimeConnected():
+      case ChatRealtimeDisconnected():
+        return;
+      case ChatRealtimeNewMessage(:final json, :final conversationId):
+        final message = ChatMessage.tryParse(json, _tokens.userId);
+        if (message == null || conversationId.isEmpty) return;
+        final active = state.active?.id == conversationId;
+        emit(
+          state.copyWith(
+            messages: active ? _mergeMessage(message) : null,
+            peerTyping: active ? false : null,
+            peerRead: active && message.mine ? false : null,
+            threads: _touchThread(
+              conversationId,
+              preview: message.content,
+              unread: active || message.mine
+                  ? 0
+                  : _unreadOf(conversationId) + 1,
+            ),
+          ),
+        );
+        if (active && !message.mine) {
+          unawaited(_socket.markRead(conversationId));
+        }
+      case ChatRealtimeTyping(
+        :final conversationId,
+        :final userId,
+        :final isTyping,
+      ):
+        if (state.active?.id != conversationId) return;
+        if (userId.isNotEmpty && userId == _tokens.userId) return;
+        emit(state.copyWith(peerTyping: isTyping));
+      case ChatRealtimeRead(:final conversationId, :final userId):
+        if (state.active?.id != conversationId) return;
+        if (userId.isNotEmpty && userId == _tokens.userId) return;
+        emit(state.copyWith(peerRead: true));
+    }
+  }
+
+  void _onReset(ChatReset event, Emitter<ChatState> emit) {
+    _typing?.cancel();
+    _socket.disconnect();
+    emit(const ChatState());
+  }
+
+  Future<Map<String, Object?>?> _deliver(
+    String conversationId,
+    String text,
+  ) async {
+    if (_socket.connected) {
+      try {
+        return await _socket.sendMessage(
+          conversationId: conversationId,
+          content: text,
+        );
+      } on Object catch (_) {}
+    }
+    final body = await _queue.send(
+      'POST',
+      ApiEndpoints.chatMessages,
+      body: {'conversationId': conversationId, 'content': text},
+    );
+    return ApiJson.asMap(ApiJson.unwrap(body));
+  }
+
+  void _joinAll(List<ChatThread> threads) {
+    for (final thread in threads) {
+      unawaited(_socket.join(thread.id));
+    }
+  }
+
+  int _unreadOf(String conversationId) {
+    for (final thread in state.threads) {
+      if (thread.id == conversationId) return thread.unread;
+    }
+    return 0;
+  }
+
+  List<ChatMessage> _mergeMessage(ChatMessage incoming, {String? pendingId}) {
+    if (state.messages.any((message) => message.id == incoming.id)) {
+      return state.messages;
+    }
+    final pendingIndex = state.messages.indexWhere(
+      (message) =>
+          message.pending &&
+          (pendingId == null
+              ? message.content == incoming.content
+              : message.id == pendingId),
+    );
+    if (pendingIndex >= 0) {
+      return [
+        for (var i = 0; i < state.messages.length; i++)
+          i == pendingIndex ? incoming : state.messages[i],
+      ];
+    }
+    return [...state.messages, incoming];
+  }
+
+  List<ChatThread> _touchThread(
+    String conversationId, {
+    required String preview,
+    required int unread,
+  }) {
+    final now = DateTime.now();
+    final exists = state.threads.any((thread) => thread.id == conversationId);
+    if (!exists) {
+      _refreshThreads();
+      return [
+        ChatThread(
+          id: conversationId,
+          title: preview,
+          preview: preview,
+          updatedAt: now,
+          unread: unread,
+        ),
+        ...state.threads,
+      ];
+    }
+    final next =
+        [
+          for (final thread in state.threads)
+            thread.id == conversationId
+                ? thread.copyWith(
+                    preview: preview,
+                    updatedAt: now,
+                    unread: unread,
+                  )
+                : thread,
+        ]..sort((left, right) {
+          final a = left.updatedAt ?? DateTime(2000);
+          final b = right.updatedAt ?? DateTime(2000);
+          return b.compareTo(a);
+        });
+    return next;
+  }
+
+  void _refreshThreads() {
+    if (AppEnv.useRemote && !isClosed) add(const ChatStarted());
   }
 
   List<ChatMessage> _messages(Object? body) {
@@ -363,4 +536,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       mine: false,
     ),
   ];
+
+  @override
+  Future<void> close() {
+    _typing?.cancel();
+    unawaited(_socketSub?.cancel());
+    _socket.disconnect();
+    return super.close();
+  }
 }

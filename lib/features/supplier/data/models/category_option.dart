@@ -39,15 +39,25 @@ class CategoryOption extends Equatable {
 
   static List<CategoryOption> parseList(Object? body) {
     final result = <CategoryOption>[];
-    void visit(Map<String, Object?> json) {
-      final category = tryParse(json);
-      if (category == null) return;
+    void visit(Map<String, Object?> json, {String parentId = ''}) {
+      final parsed = tryParse(json);
+      if (parsed == null) return;
+      final category = parsed.parentId.isEmpty && parentId.isNotEmpty
+          ? CategoryOption(
+              id: parsed.id,
+              name: parsed.name,
+              slug: parsed.slug,
+              imageUrl: parsed.imageUrl,
+              parentId: parentId,
+              productCount: parsed.productCount,
+            )
+          : parsed;
       if (result.every((item) => item.id != category.id)) result.add(category);
       final children = json['children'];
       if (children is List) {
         for (final child in children) {
           final map = ApiJson.asMap(child);
-          if (map != null) visit(map);
+          if (map != null) visit(map, parentId: category.id);
         }
       }
     }
